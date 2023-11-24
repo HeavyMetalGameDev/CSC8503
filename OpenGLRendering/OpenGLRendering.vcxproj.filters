@@ -1,0 +1,69 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\c0034428\Documents\CSC8503\OpenGLRendering\CMakeFiles\OpenGLRendering.dir\cmake_pch.cxx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\c0034428\Documents\CSC8503\OpenGLRendering\OGLTexture.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\c0034428\Documents\CSC8503\OpenGLRendering\OGLShader.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\c0034428\Documents\CSC8503\OpenGLRendering\OGLRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\c0034428\Documents\CSC8503\OpenGLRendering\OGLMesh.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\c0034428\Documents\CSC8503\OpenGLRendering\OGLComputeShader.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\c0034428\Documents\CSC8503\OpenGLRendering\OGLTexture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\c0034428\Documents\CSC8503\OpenGLRendering\OGLShader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\c0034428\Documents\CSC8503\OpenGLRendering\OGLRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\c0034428\Documents\CSC8503\OpenGLRendering\OGLMesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\c0034428\Documents\CSC8503\OpenGLRendering\OGLComputeShader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\c0034428\Documents\CSC8503\OpenGLRendering\glad\gl.h">
+      <Filter>GLAD</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\c0034428\Documents\CSC8503\OpenGLRendering\glad\gl.c">
+      <Filter>GLAD</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\c0034428\Documents\CSC8503\OpenGLRendering\CMakeFiles\OpenGLRendering.dir\Debug\cmake_pch.hxx">
+      <Filter>Precompile Header File</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\c0034428\Documents\CSC8503\OpenGLRendering\CMakeFiles\OpenGLRendering.dir\Release\cmake_pch.hxx">
+      <Filter>Precompile Header File</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\c0034428\Documents\CSC8503\OpenGLRendering\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="GLAD">
+      <UniqueIdentifier>{BE516EDC-12E7-3229-8A46-ED4A40D80721}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{E9C228D6-C3F4-3409-8F52-011570E1BD6D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Precompile Header File">
+      <UniqueIdentifier>{C2CA628E-9834-3C21-980A-D4DAB1124C94}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{82DF9614-4674-3975-923C-FC55FB39A83C}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
