@@ -42,5 +42,12 @@ namespace NCL {
 			float range = max - min;
 			return min + (range * floatValue);
 		}
+		Vector3 Vec3Clamp(const Vector3& input, const Vector3& mins, const Vector3& maxs) {
+			return Vector3(
+				std::clamp(input.x, mins.x, maxs.x),
+				std::clamp(input.y, mins.y, maxs.y),
+				std::clamp(input.z, mins.z, maxs.z)
+			);
+		}
 	}
 }

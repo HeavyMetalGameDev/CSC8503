@@ -7,7 +7,6 @@ Comments and queries to: richard-gordon.davison AT ncl.ac.uk
 https://research.ncl.ac.uk/game/
 */
 #pragma once
-
 namespace NCL::Maths {
 	class Vector2;
 	class Vector3;
@@ -36,4 +35,5 @@ namespace NCL::Maths {
 	float Areaof2DTri(const Vector3 &a, const Vector3 &b, const Vector3 & c);
 
 	float AreaofTri3D(const Vector3 &a, const Vector3 &b, const Vector3 & c);
+	Vector3 Vec3Clamp(const Vector3& input, const Vector3& mins, const Vector3& maxs);
 }
