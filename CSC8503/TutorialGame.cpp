@@ -100,7 +100,8 @@ void TutorialGame::UpdateGame(float dt) {
 	}
 
 	UpdateKeys();
-
+	if (testStateObject)testStateObject->Update(dt);
+	std::cout << testStateObject->GetPhysicsObject()->GetForce() << "\n";
 	if (useGravity) {
 		Debug::Print("(G)ravity on", Vector2(5, 95), Debug::RED);
 	}
@@ -137,7 +138,10 @@ void TutorialGame::UpdateGame(float dt) {
 	world->UpdateWorld(dt);
 	renderer->Update(dt);
 	physics->Update(dt);
+	
 
+	
+	
 	renderer->Render();
 	Debug::UpdateRenderables(dt);
 }
@@ -266,6 +270,7 @@ void TutorialGame::InitWorld() {
 	InitGameExamples();
 	InitDefaultFloor();
 	BridgeConstraintTest();
+	testStateObject = AddStateObjectToWorld(Vector3(0, 10, 0));
 }
 
 void TutorialGame::BridgeConstraintTest() {
@@ -436,6 +441,26 @@ GameObject* TutorialGame::AddBonusToWorld(const Vector3& position) {
 	world->AddGameObject(apple);
 
 	return apple;
+}
+
+StateGameObject* TutorialGame::AddStateObjectToWorld(const Vector3& position) {
+	StateGameObject* stateObj = new StateGameObject();
+
+	SphereVolume* volume = new SphereVolume(0.5f);
+	stateObj->SetBoundingVolume((CollisionVolume*)volume);
+	stateObj->GetTransform()
+		.SetScale(Vector3(2, 2, 2))
+		.SetPosition(position);
+
+	stateObj->SetRenderObject(new RenderObject(&stateObj->GetTransform(), cubeMesh, nullptr, basicShader));
+	stateObj->SetPhysicsObject(new PhysicsObject(&stateObj->GetTransform(), stateObj->GetBoundingVolume()));
+
+	stateObj->GetPhysicsObject()->SetInverseMass(0.5f);
+	stateObj->GetPhysicsObject()->InitSphereInertia();
+
+	world->AddGameObject(stateObj);
+
+	return stateObj;
 }
 
 void TutorialGame::InitDefaultFloor() {
