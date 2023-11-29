@@ -34,7 +34,7 @@ namespace NCL {
 			}
 			~GridNode() {	}
 		};
-		struct NodePointerComparitor {
+		struct NodePointerComparator {
 			bool operator()(GridNode* const& n1, GridNode* const& n2) {
 				return n1->f < n2->f;
 			}
