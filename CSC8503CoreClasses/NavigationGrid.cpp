@@ -96,10 +96,10 @@ bool NavigationGrid::FindPath(const Vector3& from, const Vector3& to, Navigation
 	GridNode* startNode = &allNodes[(fromZ * gridWidth) + fromX];
 	GridNode* endNode	= &allNodes[(toZ * gridWidth) + toX];
 
-	std::vector<GridNode*>  openList;
+	std::priority_queue<GridNode*,std::vector<GridNode*>,NodePointerComparator>  openList; //open list is a priority queue
 	std::vector<GridNode*>  closedList;
 
-	openList.push_back(startNode);
+	openList.push(startNode);
 
 	startNode->f = 0;
 	startNode->g = 0;
@@ -108,7 +108,8 @@ bool NavigationGrid::FindPath(const Vector3& from, const Vector3& to, Navigation
 	GridNode* currentBestNode = nullptr;
 
 	while (!openList.empty()) {
-		currentBestNode = RemoveBestNode(openList);
+		currentBestNode = openList.top();
+		openList.pop();
 
 		if (currentBestNode == endNode) {			//we've found the path!
 			GridNode* node = endNode;
@@ -133,17 +134,18 @@ bool NavigationGrid::FindPath(const Vector3& from, const Vector3& to, Navigation
 				float g = currentBestNode->g + currentBestNode->costs[i];
 				float f = h + g;
 
-				bool inOpen		= NodeInList(neighbour, openList);
-
-				if (!inOpen) { //first time we've seen this neighbour
-					openList.emplace_back(neighbour);
+				if (!neighbour->isOpen) { //first time we've seen this neighbour
+					openList.push(neighbour);
+					neighbour->isOpen = true;
+					neighbour->parent = currentBestNode;
 				}
-				if (!inOpen || f < neighbour->f) {//might be a better route to this neighbour
+				if (!neighbour->isOpen || f < neighbour->f) {//might be a better route to this neighbour
 					neighbour->parent = currentBestNode;
 					neighbour->f = f;
 					neighbour->g = g;
 				}
 			}
+			currentBestNode->isClosed = true;
 			closedList.emplace_back(currentBestNode);
 		}
 	}

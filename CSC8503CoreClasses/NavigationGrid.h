@@ -1,6 +1,7 @@
 #pragma once
 #include "NavigationMap.h"
 #include <string>
+#include <queue>
 namespace NCL {
 	namespace CSC8503 {
 		struct GridNode {
@@ -16,6 +17,9 @@ namespace NCL {
 
 			int type;
 
+			bool isOpen;
+			bool isClosed;
+
 			GridNode() {
 				for (int i = 0; i < 4; ++i) {
 					connected[i] = nullptr;
@@ -25,10 +29,16 @@ namespace NCL {
 				g = 0;
 				type = 0;
 				parent = nullptr;
+				isOpen = false;
+				isClosed = false;
 			}
 			~GridNode() {	}
 		};
-
+		struct NodePointerComparitor {
+			bool operator()(GridNode* const& n1, GridNode* const& n2) {
+				return n1->f < n2->f;
+			}
+		};
 		class NavigationGrid : public NavigationMap	{
 		public:
 			NavigationGrid();
