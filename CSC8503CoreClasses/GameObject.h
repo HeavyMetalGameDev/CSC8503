@@ -1,6 +1,7 @@
 #pragma once
 #include "Transform.h"
 #include "CollisionVolume.h"
+#include "Component.h"
 
 using std::vector;
 
@@ -55,11 +56,11 @@ namespace NCL::CSC8503 {
 		}
 
 		virtual void OnCollisionBegin(GameObject* otherObject) {
-			//std::cout << "OnCollisionBegin event occured!\n";
+			for (Component* component : components)component->OnCollisionBegin(otherObject);
 		}
 
 		virtual void OnCollisionEnd(GameObject* otherObject) {
-			//std::cout << "OnCollisionEnd event occured!\n";
+			for (Component* component : components)component->OnCollisionEnd(otherObject);
 		}
 
 		bool GetBroadphaseAABB(Vector3&outsize) const;
@@ -73,10 +74,21 @@ namespace NCL::CSC8503 {
 		int		GetWorldID() const {
 			return worldID;
 		}
+		template <typename T>
+		bool TryGetComponent(T*& returnPointer) {
+			for (Component* component : components) {
+				T* typeCast = dynamic_cast<T*>(component);
+				if (typeCast) {
+					returnPointer = typeCast;
+					return true;
+				}
+			}
+			return false;
+		}
 
 	protected:
 		Transform			transform;
-
+		std::vector<Component*> components;
 		CollisionVolume*	boundingVolume;
 		PhysicsObject*		physicsObject;
 		RenderObject*		renderObject;

@@ -101,7 +101,6 @@ void TutorialGame::UpdateGame(float dt) {
 
 	UpdateKeys();
 	if (testStateObject)testStateObject->Update(dt);
-	std::cout << testStateObject->GetPhysicsObject()->GetForce() << "\n";
 	if (useGravity) {
 		Debug::Print("(G)ravity on", Vector2(5, 95), Debug::RED);
 	}
