@@ -9,7 +9,7 @@ namespace NCL {
 
 		class PhysicsObject	{
 		public:
-			PhysicsObject(Transform* parentTransform, const CollisionVolume* parentVolume);
+			PhysicsObject(Transform* parentTransform, const CollisionVolume* parentVolume,bool isDynamic = true);
 			~PhysicsObject();
 
 			Vector3 GetLinearVelocity() const {
@@ -34,6 +34,24 @@ namespace NCL {
 
 			float GetInverseMass() const {
 				return inverseMass;
+			}
+
+			void SetSleeping() {
+				isSleeping = true;
+				linearVelocity = Vector3();
+				angularVelocity = Vector3();
+				torque = Vector3();
+				ClearForces();
+			}
+
+			void AddToSleepTimer(float delta) { sleepTimer += delta; }
+			void ResetSleepTimer() { sleepTimer = 0; }
+			float GetSleepTimer() { return sleepTimer; }
+			bool IsSleeping() { return isSleeping; }
+			bool IsDynamic() { return isDynamic; }
+
+			void SetAwake() {
+				isSleeping = false;
 			}
 
 			void ApplyAngularImpulse(const Vector3& force);
@@ -72,6 +90,10 @@ namespace NCL {
 			float inverseMass;
 			float elasticity;
 			float friction;
+			float sleepTimer = 0;
+
+			bool isSleeping = false;
+			bool isDynamic;
 
 			//linear stuff
 			Vector3 linearVelocity;

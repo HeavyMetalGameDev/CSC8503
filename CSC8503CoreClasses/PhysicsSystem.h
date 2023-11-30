@@ -45,6 +45,9 @@ namespace NCL {
 			float	dTOffset;
 			float	globalDamping;
 
+			float sleepTimeThreshold = .3f;
+			float sleepVelocityThreshold = .3f;
+
 			std::set<CollisionDetection::CollisionInfo> allCollisions;
 			std::set<CollisionDetection::CollisionInfo> broadphaseCollisions;
 			std::vector<CollisionDetection::CollisionInfo> broadphaseCollisionsVec;

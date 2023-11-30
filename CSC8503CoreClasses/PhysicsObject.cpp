@@ -4,13 +4,14 @@
 using namespace NCL;
 using namespace CSC8503;
 
-PhysicsObject::PhysicsObject(Transform* parentTransform, const CollisionVolume* parentVolume)	{
+PhysicsObject::PhysicsObject(Transform* parentTransform, const CollisionVolume* parentVolume, bool isDynamic)	{
 	transform	= parentTransform;
 	volume		= parentVolume;
 
 	inverseMass = 1.0f;
 	elasticity	= 0.8f;
 	friction	= 0.8f;
+	this->isDynamic = isDynamic;
 }
 
 PhysicsObject::~PhysicsObject()	{
@@ -18,11 +19,17 @@ PhysicsObject::~PhysicsObject()	{
 }
 
 void PhysicsObject::ApplyAngularImpulse(const Vector3& force) {
-	angularVelocity += inverseInteriaTensor * force;
+	Vector3 addedImpulse = inverseInteriaTensor * force;
+	angularVelocity += addedImpulse;
+	
+	isSleeping = false;
 }
 
 void PhysicsObject::ApplyLinearImpulse(const Vector3& force) {
-	linearVelocity += force * inverseMass;
+	Vector3 addedImpulse = force * inverseMass;
+	linearVelocity += addedImpulse;
+	
+	isSleeping = false;
 }
 
 void PhysicsObject::AddForce(const Vector3& addedForce) {
@@ -34,10 +41,12 @@ void PhysicsObject::AddForceAtPosition(const Vector3& addedForce, const Vector3&
 
 	force  += addedForce;
 	torque += Vector3::Cross(localPos, addedForce);
+	isSleeping = false;
 }
 
 void PhysicsObject::AddTorque(const Vector3& addedTorque) {
 	torque += addedTorque;
+	isSleeping = false;
 }
 
 void PhysicsObject::ClearForces() {

@@ -9,6 +9,8 @@
 #include "Debug.h"
 #include "Window.h"
 #include <functional>
+
+
 using namespace NCL;
 using namespace CSC8503;
 
@@ -260,6 +262,9 @@ void PhysicsSystem::ImpulseResolveCollision(GameObject& a, GameObject& b, Collis
 	physA->ApplyAngularImpulse(Vector3::Cross(relativeA, -fullImpulse));
 	physB->ApplyAngularImpulse(Vector3::Cross(relativeB, fullImpulse));
 
+	if (physA->GetAngularVelocity().Length() + physA->GetLinearVelocity().Length() < 0.6f)physA->SetSleeping();
+	if (physB->GetAngularVelocity().Length() + physB->GetLinearVelocity().Length() < 0.6f)physB->SetSleeping();
+
 }
 
 /*
@@ -308,6 +313,8 @@ void PhysicsSystem::NarrowPhase() {
 		CollisionDetection::CollisionInfo info = *i;
 		if (CollisionDetection::ObjectIntersection(info.a, info.b, info)) {
 			info.framesLeft = numCollisionFrames;
+			info.a->GetPhysicsObject()->SetAwake();
+			info.b->GetPhysicsObject()->SetAwake();
 			ImpulseResolveCollision(*info.a, *info.b, info.point);
 			allCollisions.insert(info);
 		}
@@ -331,6 +338,7 @@ void PhysicsSystem::IntegrateAccel(float dt) {
 	for (auto i = first; i != last; i++) {
 		PhysicsObject* object = (*i)->GetPhysicsObject();
 		if (object == nullptr)continue;
+		if (object->IsSleeping() || !object->IsDynamic())continue;
 
 		float inverseMass = object->GetInverseMass();
 
@@ -344,6 +352,16 @@ void PhysicsSystem::IntegrateAccel(float dt) {
 
 		linearVel += accel * dt;
 		object->SetLinearVelocity(linearVel);
+
+		Vector3 torque = object->GetTorque();
+		Vector3 angVel = object->GetAngularVelocity();
+
+		object->UpdateInertiaTensor();
+
+		Vector3 angAccel = object->GetInertiaTensor() * torque;
+
+		angVel += angAccel * dt;
+		object->SetAngularVelocity(angVel);
 	}
 }
 
@@ -363,6 +381,8 @@ void PhysicsSystem::IntegrateVelocity(float dt) {
 	for (auto i = first; i != last; i++) {
 		PhysicsObject* object = (*i)->GetPhysicsObject();
 		if (object == nullptr)continue;
+		if (!object->IsDynamic())continue;
+
 		Transform& transform = (*i)->GetTransform();
 		Vector3 position = transform.GetPosition();
 		Vector3 linearVel = object->GetLinearVelocity();
@@ -371,6 +391,25 @@ void PhysicsSystem::IntegrateVelocity(float dt) {
 
 		linearVel = linearVel * frameLinearDamping;
 		object->SetLinearVelocity(linearVel);
+
+		Quaternion orientation = transform.GetOrientation();
+		Vector3 angVel = object->GetAngularVelocity();
+
+		orientation = orientation + (Quaternion(angVel * dt * 0.5f, 0.0f) * orientation);
+		orientation.Normalise();
+		transform.SetOrientation(orientation);
+
+		float frameAngularDamping = 1.0f - (0.4f * dt);
+		angVel = angVel * frameAngularDamping;
+		object->SetAngularVelocity(angVel);
+
+		if (object->GetLinearVelocity().Length() + object->GetAngularVelocity().Length() < sleepVelocityThreshold)
+		{
+			object->AddToSleepTimer(dt);
+		}
+		else object->ResetSleepTimer();
+
+		if (object->GetSleepTimer() >= sleepTimeThreshold)object->SetSleeping();
 	}
 }
 
