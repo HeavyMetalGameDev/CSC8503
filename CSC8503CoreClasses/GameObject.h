@@ -28,7 +28,7 @@ namespace NCL::CSC8503 {
 		}
 
 		virtual void Update(float dt) { UpdateAllComponents(dt);}
-		virtual void PhysicsUpdate(float dt) { UpdateAllComponents(dt);}
+		virtual void PhysicsUpdate(float dt) { PhysicsUpdateAllComponents(dt);}
 
 		void UpdateAllComponents(float dt) { for (Component* component : components)component->Update(dt); }
 		void PhysicsUpdateAllComponents(float dt) { for (Component* component : components)component->PhysicsUpdate(dt); }
