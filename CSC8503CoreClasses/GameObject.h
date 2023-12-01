@@ -27,6 +27,12 @@ namespace NCL::CSC8503 {
 			return isActive;
 		}
 
+		virtual void Update(float dt) { UpdateAllComponents(dt);}
+		virtual void PhysicsUpdate(float dt) { UpdateAllComponents(dt);}
+
+		void UpdateAllComponents(float dt) { for (Component* component : components)component->Update(dt); }
+		void PhysicsUpdateAllComponents(float dt) { for (Component* component : components)component->PhysicsUpdate(dt); }
+
 		Transform& GetTransform() {
 			return transform;
 		}
@@ -84,6 +90,10 @@ namespace NCL::CSC8503 {
 				}
 			}
 			return false;
+		}
+
+		void AddComponent(Component* component) {
+			components.push_back(component);
 		}
 
 	protected:

@@ -21,9 +21,9 @@ GameObject::~GameObject()	{
 	delete physicsObject;
 	delete renderObject;
 	delete networkObject;
-	/*for (Component* component : components) {
+	for (Component* component : components) {
 		delete component;
-	}*/
+	}
 }
 
 bool GameObject::GetBroadphaseAABB(Vector3&outSize) const {

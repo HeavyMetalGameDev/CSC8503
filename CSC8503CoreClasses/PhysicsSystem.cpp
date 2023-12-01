@@ -67,6 +67,9 @@ int realHZ = idealHZ;
 float realDT = idealDT;
 
 void PhysicsSystem::Update(float dt) {
+
+	gameWorld.UpdateWorldPhysics(dt); //PhysicsUpdate all game objects in the world.
+
 	if (Window::GetKeyboard()->KeyPressed(KeyCodes::B)) {
 		useBroadPhase = !useBroadPhase;
 		std::cout << "Setting broadphase to " << useBroadPhase << std::endl;
@@ -259,11 +262,14 @@ void PhysicsSystem::ImpulseResolveCollision(GameObject& a, GameObject& b, Collis
 	physA->ApplyLinearImpulse(-fullImpulse);
 	physB->ApplyLinearImpulse(fullImpulse);
 
-	physA->ApplyAngularImpulse(Vector3::Cross(relativeA, -fullImpulse));
-	physB->ApplyAngularImpulse(Vector3::Cross(relativeB, fullImpulse));
+	Vector3 aCross = Vector3::Cross(relativeA, -fullImpulse);
+	Vector3 bCross = Vector3::Cross(relativeB, fullImpulse);
 
-	if (physA->GetAngularVelocity().Length() + physA->GetLinearVelocity().Length() < 0.6f)physA->SetSleeping();
-	if (physB->GetAngularVelocity().Length() + physB->GetLinearVelocity().Length() < 0.6f)physB->SetSleeping();
+	physA->ApplyAngularImpulse(aCross);
+	physB->ApplyAngularImpulse(bCross);
+
+	//if (physA->GetAngularVelocity().Length() + physA->GetLinearVelocity().Length() < 0.6f)physA->SetSleeping();
+	//if (physB->GetAngularVelocity().Length() + physB->GetLinearVelocity().Length() < 0.6f)physB->SetSleeping();
 
 }
 
@@ -277,7 +283,8 @@ compare the collisions that we absolutely need to.
 */
 void PhysicsSystem::BroadPhase() {
 	broadphaseCollisions.clear();
-	QuadTree<GameObject*> tree(Vector2(1024, 1024), 7, 6);
+	QuadTree<GameObject*> dynamicTree(Vector2(1024, 1024), 7, 6);
+	QuadTree<GameObject*> staticTree(Vector2(1024, 1024), 7, 6);
 
 	std::vector<GameObject*>::const_iterator first;
 	std::vector<GameObject*>::const_iterator last;
@@ -287,9 +294,9 @@ void PhysicsSystem::BroadPhase() {
 		if (!(*i)->GetBroadphaseAABB(halfSizes))continue;
 
 		Vector3 pos = (*i)->GetTransform().GetPosition();
-		tree.Insert(*i, pos, halfSizes);
+		dynamicTree.Insert(*i, pos, halfSizes);
 	}
-	tree.OperateOnContents(
+	dynamicTree.OperateOnContents(
 		[&](std::list<QuadTreeEntry<GameObject*>>& data) {
 			CollisionDetection::CollisionInfo info;
 			for (auto i = data.begin(); i != data.end(); i++) {
