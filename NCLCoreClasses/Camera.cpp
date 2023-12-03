@@ -39,6 +39,31 @@ void Camera::UpdateCamera(float dt) {
 
 }
 
+CameraInputStruct Camera::GetRotationsFromController() {
+	CameraInputStruct input;
+	input.pitch = pitch - activeController->GetNamedAxis("YLook");
+	input.yaw = yaw - activeController->GetNamedAxis("XLook");
+
+	input.pitch = std::min(input.pitch, 90.0f);
+	input.pitch = std::max(input.pitch, -90.0f);
+
+	if (input.yaw < 0) {
+		input.yaw += 360.0f;
+	}
+	if (input.yaw > 360.0f) {
+		input.yaw -= 360.0f;
+	}
+	return input;
+}
+
+Vector3 Camera::GetMovementFromController() {
+	Vector3 input;
+	input.z += -activeController->GetNamedAxis("Forward");
+	input.x += activeController->GetNamedAxis("Sidestep");
+	return input;
+}
+
+
 /*
 Generates a view matrix for the camera's viewpoint. This matrix can be sent
 straight to the shader...it's already an 'inverse camera' matrix.

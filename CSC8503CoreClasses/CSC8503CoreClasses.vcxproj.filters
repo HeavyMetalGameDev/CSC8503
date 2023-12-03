@@ -232,8 +232,20 @@
     <ClCompile Include="C:\Users\c0034428\Documents\CSC8503\CSC8503CoreClasses\enet\peer.c">
       <Filter>eNet</Filter>
     </ClCompile>
+    <ClCompile Include="MovementApplierComponent.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="MovementInput.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
     <ClCompile Include="Component.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="..\CSC8503\TestComponent.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="FirstPersonInputComponent.cpp">
+      <Filter>Components</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -243,8 +255,20 @@
     <ClInclude Include="C:\Users\c0034428\Documents\CSC8503\CSC8503CoreClasses\CMakeFiles\CSC8503CoreClasses.dir\Release\cmake_pch.hxx">
       <Filter>Precompile Header File</Filter>
     </ClInclude>
+    <ClInclude Include="MovementApplierComponent.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="MovementInput.h">
+      <Filter>Components</Filter>
+    </ClInclude>
     <ClInclude Include="Component.h">
-      <Filter>Header Files</Filter>
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CSC8503\TestComponent.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="FirstPersonInputComponent.h">
+      <Filter>Components</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -286,6 +310,9 @@
     </Filter>
     <Filter Include="eNet">
       <UniqueIdentifier>{B0DC03F1-9FAB-3BB7-A4EE-FA2B3B8CE0F4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Components">
+      <UniqueIdentifier>{e4b24830-a3bb-4a02-836a-6e09735ab818}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

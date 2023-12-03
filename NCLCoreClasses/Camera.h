@@ -13,6 +13,11 @@ https://research.ncl.ac.uk/game/
 
 namespace NCL {
 	using namespace NCL::Maths;
+	struct CameraInputStruct
+	{
+		float pitch;
+		float yaw;
+	};
 	class Camera {
 	public:
 		Camera(void) {
@@ -80,6 +85,9 @@ namespace NCL {
 		//Sets pitch, in degrees
 		Camera& SetPitch(float p) { pitch = p; return *this; }
 
+		CameraInputStruct GetRotationsFromController();
+		Vector3 GetMovementFromController();
+
 	protected:
 		float	nearPlane;
 		float	farPlane;
@@ -87,6 +95,7 @@ namespace NCL {
 		float	yaw;
 		float	pitch;
 		Vector3 position;
+		bool isFreeCam = false;
 
 		const Controller* activeController = nullptr;
 	};

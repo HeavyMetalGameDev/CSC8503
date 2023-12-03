@@ -22,7 +22,6 @@
     <ClCompile Include="C:\Users\c0034428\Documents\CSC8503\CSC8503\TutorialGame.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TestComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="C:\Users\c0034428\Documents\CSC8503\CSC8503\GameTechRenderer.h">
@@ -46,7 +45,6 @@
     <ClInclude Include="C:\Users\c0034428\Documents\CSC8503\CSC8503\CMakeFiles\CSC8503.dir\Release\cmake_pch.hxx">
       <Filter>Precompile Header File</Filter>
     </ClInclude>
-    <ClInclude Include="TestComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="C:\Users\c0034428\Documents\CSC8503\CSC8503\CMakeLists.txt" />

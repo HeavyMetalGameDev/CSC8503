@@ -2,6 +2,7 @@
 #include "Transform.h"
 #include "CollisionVolume.h"
 #include "Component.h"
+#include "Camera.h"
 
 using std::vector;
 
@@ -27,7 +28,7 @@ namespace NCL::CSC8503 {
 			return isActive;
 		}
 
-		virtual void Update(float dt) { UpdateAllComponents(dt);}
+		virtual void Update(float dt) { UpdateAllComponents(dt); if (attachedCamera)attachedCamera->SetPosition(transform.GetPosition()); }
 		virtual void PhysicsUpdate(float dt) { PhysicsUpdateAllComponents(dt);}
 
 		void UpdateAllComponents(float dt) { for (Component* component : components)component->Update(dt); }
@@ -51,6 +52,10 @@ namespace NCL::CSC8503 {
 
 		void SetRenderObject(RenderObject* newObject) {
 			renderObject = newObject;
+		}
+
+		void SetCamera(Camera* c) {
+			attachedCamera = c;
 		}
 
 		void SetPhysicsObject(PhysicsObject* newObject) {
@@ -103,6 +108,7 @@ namespace NCL::CSC8503 {
 		PhysicsObject*		physicsObject;
 		RenderObject*		renderObject;
 		NetworkObject*		networkObject;
+		Camera* attachedCamera;
 
 		bool		isActive;
 		int			worldID;

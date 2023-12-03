@@ -3,6 +3,8 @@
 #include "PhysicsObject.h"
 #include "RenderObject.h"
 #include "TextureLoader.h"
+#include "MovementApplierComponent.h"
+#include "FirstPersonInputComponent.h"
 
 #include "PositionConstraint.h"
 #include "OrientationConstraint.h"
@@ -271,7 +273,8 @@ void TutorialGame::InitWorld() {
 	InitDefaultFloor();
 	BridgeConstraintTest();
 	testStateObject = AddStateObjectToWorld(Vector3(0, 10, 0));
-	AddTestComponentObjectToWorld(Vector3(5, 5, 5));
+	AddPlayerToWorld(Vector3(0, 10, 0));
+	//AddTestComponentObjectToWorld(Vector3(5, 5, 5));
 }
 
 void TutorialGame::BridgeConstraintTest() {
@@ -394,6 +397,13 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 
 	character->GetPhysicsObject()->SetInverseMass(inverseMass);
 	character->GetPhysicsObject()->InitSphereInertia();
+	character->SetCamera(&world->GetMainCamera());
+
+	MovementApplierComponent* ma = new MovementApplierComponent(&character->GetTransform(), character->GetPhysicsObject());
+	FirstPersonInputComponent* fps = new FirstPersonInputComponent(&world->GetMainCamera());
+
+	ma->SetInputComponent(fps);
+	character->AddComponent(ma);
 
 	world->AddGameObject(character);
 
