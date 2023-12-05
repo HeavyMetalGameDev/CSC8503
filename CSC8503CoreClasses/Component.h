@@ -13,6 +13,7 @@ namespace NCL::CSC8503 {
 		virtual void PhysicsUpdate(float dt) {};
 		virtual void Start(GameWorld* gw) {};
 		virtual void OnCollisionBegin(GameObject* otherObject) {};
+		virtual void OnCollisionStay(GameObject* otherObject) {};
 		virtual void OnCollisionEnd(GameObject* otherObject) {};
 
 	protected:

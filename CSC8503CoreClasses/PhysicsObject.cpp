@@ -4,7 +4,7 @@
 using namespace NCL;
 using namespace CSC8503;
 
-PhysicsObject::PhysicsObject(Transform* parentTransform, const CollisionVolume* parentVolume, bool isDynamic)	{
+PhysicsObject::PhysicsObject(Transform* parentTransform, const CollisionVolume* parentVolume, bool isDynamic, bool isTrigger)	{
 	transform	= parentTransform;
 	volume		= parentVolume;
 
@@ -12,6 +12,7 @@ PhysicsObject::PhysicsObject(Transform* parentTransform, const CollisionVolume* 
 	elasticity	= 0.8f;
 	friction	= 0.8f;
 	this->isDynamic = isDynamic;
+	this->isTrigger = isTrigger;
 }
 
 PhysicsObject::~PhysicsObject()	{

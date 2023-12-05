@@ -253,6 +253,10 @@
     <ClCompile Include="PlayerInputComponent.cpp">
       <Filter>Components</Filter>
     </ClCompile>
+    <ClCompile Include="ObjectPickupComponent.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="TriggerComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="C:\Users\c0034428\Documents\CSC8503\CSC8503CoreClasses\CMakeFiles\CSC8503CoreClasses.dir\Debug\cmake_pch.hxx">
@@ -285,6 +289,10 @@
     <ClInclude Include="PlayerInputComponent.h">
       <Filter>Components</Filter>
     </ClInclude>
+    <ClInclude Include="ObjectPickupComponent.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="TriggerComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="C:\Users\c0034428\Documents\CSC8503\CSC8503CoreClasses\CMakeLists.txt" />

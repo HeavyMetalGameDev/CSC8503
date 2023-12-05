@@ -80,6 +80,10 @@ namespace NCL::CSC8503 {
 			for (Component* component : components)component->OnCollisionEnd(otherObject);
 		}
 
+		virtual void OnCollisionStay(GameObject* otherObject) {
+			for (Component* component : components)component->OnCollisionStay(otherObject);
+		}
+
 		bool GetBroadphaseAABB(Vector3&outsize) const;
 
 		void UpdateBroadphaseAABB();

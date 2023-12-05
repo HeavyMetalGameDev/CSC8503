@@ -167,7 +167,10 @@ void PhysicsSystem::UpdateCollisionList() {
 
 		CollisionDetection::CollisionInfo& in = const_cast<CollisionDetection::CollisionInfo&>(*i);
 		in.framesLeft--;
-
+		if ((*i).framesLeft > 0) {
+			i->a->OnCollisionStay(i->b);
+			i->b->OnCollisionStay(i->a);
+		}
 		if ((*i).framesLeft < 0) {
 			i->a->OnCollisionEnd(i->b);
 			i->b->OnCollisionEnd(i->a);
@@ -233,6 +236,7 @@ void PhysicsSystem::ImpulseResolveCollision(GameObject& a, GameObject& b, Collis
 	Transform& transformB = b.GetTransform();
 
 	float totalMass = physA->GetInverseMass() + physB->GetInverseMass();
+	if (physA->IsTrigger() || physB->IsTrigger())return;
 	if (totalMass == 0)return;
 
 	transformA.SetPosition(transformA.GetPosition() - (p.normal * p.penetration * (physA->GetInverseMass()/totalMass)));
@@ -322,6 +326,7 @@ void PhysicsSystem::NarrowPhase() {
 			info.framesLeft = numCollisionFrames;
 			info.a->GetPhysicsObject()->SetAwake();
 			info.b->GetPhysicsObject()->SetAwake();
+
 			ImpulseResolveCollision(*info.a, *info.b, info.point);
 			allCollisions.insert(info);
 		}
@@ -345,7 +350,7 @@ void PhysicsSystem::IntegrateAccel(float dt) {
 	for (auto i = first; i != last; i++) {
 		PhysicsObject* object = (*i)->GetPhysicsObject();
 		if (object == nullptr)continue;
-		if (object->IsSleeping() || !object->IsDynamic())continue;
+		if (object->IsSleeping() || !object->IsDynamic()|| object->IsTrigger())continue;
 
 		float inverseMass = object->GetInverseMass();
 
@@ -387,7 +392,7 @@ void PhysicsSystem::IntegrateVelocity(float dt) {
 	for (auto i = first; i != last; i++) {
 		PhysicsObject* object = (*i)->GetPhysicsObject();
 		if (object == nullptr)continue;
-		if (!object->IsDynamic())continue;
+		if (!object->IsDynamic() || object->IsTrigger())continue;
 
 		Transform& transform = (*i)->GetTransform();
 		Vector3 position = transform.GetPosition();

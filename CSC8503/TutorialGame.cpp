@@ -7,6 +7,8 @@
 #include "FirstPersonInputComponent.h"
 #include "SimpleChaseComponent.h"
 #include "PlayerInputComponent.h"
+#include "ObjectPickupComponent.h"
+#include "TriggerComponent.h"
 
 #include "PositionConstraint.h"
 #include "OrientationConstraint.h"
@@ -275,7 +277,7 @@ void TutorialGame::InitWorld() {
 	BridgeConstraintTest();
 	testStateObject = AddStateObjectToWorld(Vector3(0, 10, 0));
 	AddPlayerToWorld(Vector3(0, 10, 0));
-	AddEnemyToWorld(Vector3(3, 10, 0));
+	//AddEnemyToWorld(Vector3(3, 10, 0));
 	//AddTestComponentObjectToWorld(Vector3(5, 5, 5));
 	world->StartWorld();
 }
@@ -370,6 +372,29 @@ GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius
 	return sphere;
 }
 
+GameObject* TutorialGame::AddSphereTriggerToWorld(const Vector3& position, float radius) {
+	GameObject* sphere = new GameObject();
+	sphere->SetTag("SphereTrigger");
+
+	Vector3 sphereSize = Vector3(radius, radius, radius);
+	SphereVolume* volume = new SphereVolume(radius);
+	sphere->SetBoundingVolume((CollisionVolume*)volume);
+
+	sphere->GetTransform()
+		.SetScale(sphereSize)
+		.SetPosition(position);
+
+	//sphere->SetRenderObject(new RenderObject(&sphere->GetTransform(), sphereMesh, basicTex, basicShader));
+	sphere->SetPhysicsObject(new PhysicsObject(&sphere->GetTransform(), sphere->GetBoundingVolume(),true,true));
+
+	//PhysicsMaterial* spherePhys;
+	//if (world->TryGetPhysMat("Bouncy", spherePhys))so->SetPhysMat(spherePhys);
+
+	world->AddGameObject(sphere);
+
+	return sphere;
+}
+
 GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass) {
 	GameObject* cube = new GameObject();
 
@@ -426,9 +451,18 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 	FirstPersonInputComponent* fps = new FirstPersonInputComponent(&world->GetMainCamera());
 	PlayerInputComponent* pic = new PlayerInputComponent(character);
 
+	GameObject* pickupObject = AddSphereTriggerToWorld(Vector3(-1, 10, 0), 1);
+
+	TriggerComponent* tc = new TriggerComponent();
+
+	pickupObject->AddComponent(tc);
+
+	ObjectPickupComponent* opc = new ObjectPickupComponent(character,pickupObject,&world->GetMainCamera(),tc);
+
 	ma->SetInputComponent(fps);
 	character->AddComponent(ma);
 	character->AddComponent(pic);
+	character->AddComponent(opc);
 
 	world->AddGameObject(character);
 
@@ -558,8 +592,8 @@ void TutorialGame::InitSphereGridWorld(int numRows, int numCols, float rowSpacin
 }
 
 void TutorialGame::InitMixedGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing) {
-	float sphereRadius = 1.0f;
-	Vector3 cubeDims = Vector3(1, 1, 1);
+	float sphereRadius = 0.5f;
+	Vector3 cubeDims = Vector3(.5f, .5f, .5f);
 
 	for (int x = 0; x < numCols; ++x) {
 		for (int z = 0; z < numRows; ++z) {

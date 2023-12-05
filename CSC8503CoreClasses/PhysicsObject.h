@@ -10,7 +10,7 @@ namespace NCL {
 
 		class PhysicsObject	{
 		public:
-			PhysicsObject(Transform* parentTransform, const CollisionVolume* parentVolume,bool isDynamic = true);
+			PhysicsObject(Transform* parentTransform, const CollisionVolume* parentVolume,bool isDynamic = true, bool isTrigger = false);
 			~PhysicsObject();
 
 			Vector3 GetLinearVelocity() const {
@@ -50,6 +50,7 @@ namespace NCL {
 			float GetSleepTimer() { return sleepTimer; }
 			bool IsSleeping() { return isSleeping; }
 			bool IsDynamic() { return isDynamic; }
+			bool IsTrigger() { return isTrigger; }
 
 			void SetAwake() {
 				isSleeping = false;
@@ -98,6 +99,7 @@ namespace NCL {
 
 			bool isSleeping = false;
 			bool isDynamic;
+			bool isTrigger = false;
 
 			PhysicsMaterial* physMat;
 			//linear stuff
