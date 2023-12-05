@@ -6,8 +6,8 @@
 
 using namespace NCL::CSC8503;
 
-GameObject::GameObject(const std::string& objectName)	{
-	name			= objectName;
+GameObject::GameObject(const std::string& tag)	{
+	this->tag			= tag;
 	worldID			= -1;
 	isActive		= true;
 	boundingVolume	= nullptr;

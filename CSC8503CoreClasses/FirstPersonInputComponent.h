@@ -17,6 +17,7 @@ namespace NCL::CSC8503 {
 
 	protected:
 		Camera* camera;
+		bool isJumping=false;
 	};
 }
 

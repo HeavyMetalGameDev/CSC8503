@@ -2,10 +2,9 @@
 #include "Component.h"
 #include "Vector3.h"
 namespace NCL::CSC8503 {
-	class MovementInput
+	class MovementInput : public Component
 	{
 	public:
 		virtual NCL::Maths::Vector3 GetMovementDirection() { return NCL::Maths::Vector3(); } //vector3 of direction to apply force in
-
 	};
 }

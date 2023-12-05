@@ -13,9 +13,28 @@ GameWorld::GameWorld()	{
 	shuffleObjects		= false;
 	worldIDCounter		= 0;
 	worldStateCounter	= 0;
+	InitPhysicsMaterials();
 }
 
 GameWorld::~GameWorld()	{
+}
+
+void GameWorld::InitPhysicsMaterials() {
+	PhysicsMaterial bouncy;
+	bouncy.e = 0.8f;
+	bouncy.linearDampHorizontal = 0.35f;
+	bouncy.linearDampVertical = 0.35f;
+	bouncy.angularDamp = 0.35f;
+	physicsMaterials["Bouncy"] = bouncy;
+
+	PhysicsMaterial standard;
+	physicsMaterials["Standard"] = standard;
+
+	PhysicsMaterial player;
+	player.e = 0.0f;
+	player.linearDampHorizontal = 3.0f;
+	player.angularDamp = 3.0f;
+	physicsMaterials["Player"] = player;
 }
 
 void GameWorld::Clear() {
@@ -81,6 +100,29 @@ void GameWorld::UpdateWorld(float dt) {
 
 void GameWorld::UpdateWorldPhysics(float dt) {
 	for (GameObject* gameObject : gameObjects)gameObject->PhysicsUpdate(dt);
+}
+
+void GameWorld::StartWorld() {
+	for (GameObject* gameObject : gameObjects)gameObject->Start(this);
+}
+
+bool GameWorld::TryGetObjectByTag(std::string t, GameObject*& out) { //searches through game objects to find provided tag
+	for (GameObject* gameObject : gameObjects) {
+		if (gameObject->GetTag() == t) {
+			out = gameObject;
+			return true;
+		}	
+	}
+	return false;
+}
+
+bool GameWorld::TryGetPhysMat(std::string name,PhysicsMaterial*& out) {
+	if (physicsMaterials.find(name) == physicsMaterials.end())
+	{
+		return false;
+	}
+	out = &physicsMaterials[name];
+	return true;
 }
 
 bool GameWorld::Raycast(Ray& r, RayCollision& closestCollision, bool closestObject, GameObject* ignoreThis) const {

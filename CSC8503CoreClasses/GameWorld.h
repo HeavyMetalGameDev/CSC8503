@@ -43,10 +43,12 @@ namespace NCL {
 			bool Raycast(Ray& r, RayCollision& closestCollision, bool closestObject = false, GameObject* ignore = nullptr) const;
 
 			virtual void UpdateWorld(float dt);
-
+			virtual void StartWorld();
 			virtual void UpdateWorldPhysics(float dt);
 
 			void OperateOnContents(GameObjectFunc f);
+
+			bool TryGetObjectByTag(std::string t, GameObject*& out);
 
 			void GetObjectIterators(
 				GameObjectIterator& first,
@@ -60,10 +62,14 @@ namespace NCL {
 				return worldStateCounter;
 			}
 
+			void InitPhysicsMaterials();
+
+			bool TryGetPhysMat(std::string name, PhysicsMaterial*& physMat);
+
 		protected:
 			std::vector<GameObject*> gameObjects;
 			std::vector<Constraint*> constraints;
-
+			std::map<std::string, PhysicsMaterial> physicsMaterials;
 			PerspectiveCamera mainCamera;
 
 			bool shuffleConstraints;

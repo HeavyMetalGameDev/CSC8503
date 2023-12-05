@@ -5,6 +5,8 @@
 #include "TextureLoader.h"
 #include "MovementApplierComponent.h"
 #include "FirstPersonInputComponent.h"
+#include "SimpleChaseComponent.h"
+#include "PlayerInputComponent.h"
 
 #include "PositionConstraint.h"
 #include "OrientationConstraint.h"
@@ -269,12 +271,13 @@ void TutorialGame::InitWorld() {
 
 	InitMixedGridWorld(15, 15, 3.5f, 3.5f);
 
-	InitGameExamples();
 	InitDefaultFloor();
 	BridgeConstraintTest();
 	testStateObject = AddStateObjectToWorld(Vector3(0, 10, 0));
 	AddPlayerToWorld(Vector3(0, 10, 0));
+	AddEnemyToWorld(Vector3(3, 10, 0));
 	//AddTestComponentObjectToWorld(Vector3(5, 5, 5));
+	world->StartWorld();
 }
 
 void TutorialGame::BridgeConstraintTest() {
@@ -321,8 +324,12 @@ GameObject* TutorialGame::AddFloorToWorld(const Vector3& position) {
 	floor->SetRenderObject(new RenderObject(&floor->GetTransform(), cubeMesh, basicTex, basicShader));
 	floor->SetPhysicsObject(new PhysicsObject(&floor->GetTransform(), floor->GetBoundingVolume()));
 
-	floor->GetPhysicsObject()->SetInverseMass(0);
-	floor->GetPhysicsObject()->InitCubeInertia();
+	PhysicsObject* fo = floor->GetPhysicsObject();
+	fo->SetInverseMass(0);
+	fo->InitCubeInertia();
+
+	PhysicsMaterial* floorPhys;
+	if (world->TryGetPhysMat("Standard", floorPhys))fo->SetPhysMat(floorPhys);
 
 	world->AddGameObject(floor);
 
@@ -338,6 +345,7 @@ physics worlds. You'll probably need another function for the creation of OBB cu
 */
 GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius, float inverseMass) {
 	GameObject* sphere = new GameObject();
+	sphere->SetTag("Sphere");
 
 	Vector3 sphereSize = Vector3(radius, radius, radius);
 	SphereVolume* volume = new SphereVolume(radius);
@@ -350,8 +358,12 @@ GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius
 	sphere->SetRenderObject(new RenderObject(&sphere->GetTransform(), sphereMesh, basicTex, basicShader));
 	sphere->SetPhysicsObject(new PhysicsObject(&sphere->GetTransform(), sphere->GetBoundingVolume()));
 
-	sphere->GetPhysicsObject()->SetInverseMass(inverseMass);
-	sphere->GetPhysicsObject()->InitSphereInertia();
+	PhysicsObject* so = sphere->GetPhysicsObject();
+	so->SetInverseMass(inverseMass);
+	so->InitSphereInertia();
+
+	PhysicsMaterial* spherePhys;
+	if (world->TryGetPhysMat("Bouncy", spherePhys))so->SetPhysMat(spherePhys);
 
 	world->AddGameObject(sphere);
 
@@ -371,8 +383,12 @@ GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimens
 	cube->SetRenderObject(new RenderObject(&cube->GetTransform(), cubeMesh, basicTex, basicShader));
 	cube->SetPhysicsObject(new PhysicsObject(&cube->GetTransform(), cube->GetBoundingVolume()));
 
-	cube->GetPhysicsObject()->SetInverseMass(inverseMass);
-	cube->GetPhysicsObject()->InitCubeInertia();
+	PhysicsObject* co = cube->GetPhysicsObject();
+	co->SetInverseMass(inverseMass);
+	co->InitCubeInertia();
+
+	PhysicsMaterial* cubePhys;
+	if (world->TryGetPhysMat("Standard", cubePhys))co->SetPhysMat(cubePhys);
 
 	world->AddGameObject(cube);
 
@@ -381,7 +397,7 @@ GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimens
 
 GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 	float meshSize		= 1.0f;
-	float inverseMass	= 0.5f;
+	float inverseMass	= 0.9f;
 
 	GameObject* character = new GameObject();
 	SphereVolume* volume  = new SphereVolume(1.0f);
@@ -392,18 +408,27 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 		.SetScale(Vector3(meshSize, meshSize, meshSize))
 		.SetPosition(position);
 
-	character->SetRenderObject(new RenderObject(&character->GetTransform(), charMesh, nullptr, basicShader));
+	//character->SetRenderObject(new RenderObject(&character->GetTransform(), charMesh, nullptr, basicShader));
 	character->SetPhysicsObject(new PhysicsObject(&character->GetTransform(), character->GetBoundingVolume()));
 
-	character->GetPhysicsObject()->SetInverseMass(inverseMass);
-	character->GetPhysicsObject()->InitSphereInertia();
-	character->SetCamera(&world->GetMainCamera());
+	PhysicsObject* co = character->GetPhysicsObject();
+	co->SetInverseMass(inverseMass);
+	co->InitSphereInertia();
 
-	MovementApplierComponent* ma = new MovementApplierComponent(&character->GetTransform(), character->GetPhysicsObject());
+	PhysicsMaterial* playerPhys;
+	if (world->TryGetPhysMat("Player", playerPhys))co->SetPhysMat(playerPhys);
+
+
+	character->SetCamera(&world->GetMainCamera());
+	character->SetTag("Player");
+
+	MovementApplierComponent* ma = new MovementApplierComponent(&character->GetTransform(), character->GetPhysicsObject(),7000.0f);
 	FirstPersonInputComponent* fps = new FirstPersonInputComponent(&world->GetMainCamera());
+	PlayerInputComponent* pic = new PlayerInputComponent(character);
 
 	ma->SetInputComponent(fps);
 	character->AddComponent(ma);
+	character->AddComponent(pic);
 
 	world->AddGameObject(character);
 
@@ -426,8 +451,20 @@ GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position) {
 	character->SetRenderObject(new RenderObject(&character->GetTransform(), enemyMesh, nullptr, basicShader));
 	character->SetPhysicsObject(new PhysicsObject(&character->GetTransform(), character->GetBoundingVolume()));
 
-	character->GetPhysicsObject()->SetInverseMass(inverseMass);
-	character->GetPhysicsObject()->InitSphereInertia();
+	PhysicsObject* co = character->GetPhysicsObject();
+	co->SetInverseMass(inverseMass);
+	co->InitSphereInertia();
+	PhysicsMaterial* enemyPhys;
+	if (world->TryGetPhysMat("Player", enemyPhys))co->SetPhysMat(enemyPhys);
+
+	MovementApplierComponent* ma = new MovementApplierComponent(&character->GetTransform(), character->GetPhysicsObject(), 7000.0f);
+	SimpleChaseComponent* sc = new SimpleChaseComponent(character);
+
+
+	ma->SetInputComponent(sc);
+
+	character->AddComponent(ma);
+	character->AddComponent(sc);
 
 	world->AddGameObject(character);
 
@@ -466,8 +503,12 @@ StateGameObject* TutorialGame::AddStateObjectToWorld(const Vector3& position) {
 	stateObj->SetRenderObject(new RenderObject(&stateObj->GetTransform(), cubeMesh, nullptr, basicShader));
 	stateObj->SetPhysicsObject(new PhysicsObject(&stateObj->GetTransform(), stateObj->GetBoundingVolume()));
 
-	stateObj->GetPhysicsObject()->SetInverseMass(0.5f);
-	stateObj->GetPhysicsObject()->InitSphereInertia();
+	PhysicsObject* so = stateObj->GetPhysicsObject();
+	so->SetInverseMass(0.5f);
+	so->InitSphereInertia();
+	PhysicsMaterial* statePhys;
+	if (world->TryGetPhysMat("Standard", statePhys))so->SetPhysMat(statePhys);
+
 
 	world->AddGameObject(stateObj);
 

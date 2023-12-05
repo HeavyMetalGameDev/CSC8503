@@ -3,6 +3,7 @@
 #include "CollisionVolume.h"
 #include "Component.h"
 #include "Camera.h"
+#include "PhysicsMaterial.h"
 
 using std::vector;
 
@@ -10,6 +11,7 @@ namespace NCL::CSC8503 {
 	class NetworkObject;
 	class RenderObject;
 	class PhysicsObject;
+	class GameWorld;
 
 	class GameObject	{
 	public:
@@ -30,9 +32,11 @@ namespace NCL::CSC8503 {
 
 		virtual void Update(float dt) { UpdateAllComponents(dt); if (attachedCamera)attachedCamera->SetPosition(transform.GetPosition()); }
 		virtual void PhysicsUpdate(float dt) { PhysicsUpdateAllComponents(dt);}
+		virtual void Start(GameWorld* gw) { StartAllComponents(gw); }
 
 		void UpdateAllComponents(float dt) { for (Component* component : components)component->Update(dt); }
 		void PhysicsUpdateAllComponents(float dt) { for (Component* component : components)component->PhysicsUpdate(dt); }
+		void StartAllComponents(GameWorld* gw) { for (Component* component : components)component->Start(gw); }
 
 		Transform& GetTransform() {
 			return transform;
@@ -62,9 +66,11 @@ namespace NCL::CSC8503 {
 			physicsObject = newObject;
 		}
 
-		const std::string& GetName() const {
-			return name;
+		const std::string& GetTag() const {
+			return tag;
 		}
+
+		void SetTag(std::string t) { tag = t; }
 
 		virtual void OnCollisionBegin(GameObject* otherObject) {
 			for (Component* component : components)component->OnCollisionBegin(otherObject);
@@ -109,10 +115,9 @@ namespace NCL::CSC8503 {
 		RenderObject*		renderObject;
 		NetworkObject*		networkObject;
 		Camera* attachedCamera;
-
 		bool		isActive;
 		int			worldID;
-		std::string	name;
+		std::string	tag;
 
 		Vector3 broadphaseAABB;
 	};

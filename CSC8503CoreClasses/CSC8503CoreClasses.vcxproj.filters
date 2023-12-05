@@ -247,6 +247,12 @@
     <ClCompile Include="FirstPersonInputComponent.cpp">
       <Filter>Components</Filter>
     </ClCompile>
+    <ClCompile Include="SimpleChaseComponent.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerInputComponent.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="C:\Users\c0034428\Documents\CSC8503\CSC8503CoreClasses\CMakeFiles\CSC8503CoreClasses.dir\Debug\cmake_pch.hxx">
@@ -268,6 +274,15 @@
       <Filter>Components</Filter>
     </ClInclude>
     <ClInclude Include="FirstPersonInputComponent.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="SimpleChaseComponent.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysicsMaterial.h">
+      <Filter>Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerInputComponent.h">
       <Filter>Components</Filter>
     </ClInclude>
   </ItemGroup>

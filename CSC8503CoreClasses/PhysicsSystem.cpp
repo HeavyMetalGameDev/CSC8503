@@ -15,11 +15,11 @@ using namespace NCL;
 using namespace CSC8503;
 
 PhysicsSystem::PhysicsSystem(GameWorld& g) : gameWorld(g) {
-	applyGravity = false;
-	useBroadPhase = false;//can be changed
+	applyGravity = true;
+	useBroadPhase = true;//can be changed
 	dTOffset = 0.0f;
-	globalDamping = 0.995f;
-	SetGravity(Vector3(0.0f, -9.8f, 0.0f));
+	globalDamping = 0.95f;
+	SetGravity(Vector3(0.0f, -13.0f, 0.0f));
 }
 
 PhysicsSystem::~PhysicsSystem() {
@@ -255,7 +255,7 @@ void PhysicsSystem::ImpulseResolveCollision(GameObject& a, GameObject& b, Collis
 	Vector3 inertiaB = Vector3::Cross(physB->GetInertiaTensor() * Vector3::Cross(relativeB, p.normal), relativeB);
 
 	float angularEffect = Vector3::Dot(inertiaA + inertiaB, p.normal);
-	float cRestitution = 0.66f;
+	float cRestitution = (physA->GetPhysMat()->e + physB->GetPhysMat()->e)*.5f; //average e values of materials
 	float j = (-(1.0f + cRestitution) * impulseForce) / (totalMass + angularEffect);
 	Vector3 fullImpulse = p.normal * j;
 
@@ -383,7 +383,6 @@ void PhysicsSystem::IntegrateVelocity(float dt) {
 	std::vector < GameObject*>::const_iterator last;
 	gameWorld.GetObjectIterators(first, last);
 
-	float frameLinearDamping = 1.0f - (0.4f * dt);
 
 	for (auto i = first; i != last; i++) {
 		PhysicsObject* object = (*i)->GetPhysicsObject();
@@ -395,8 +394,14 @@ void PhysicsSystem::IntegrateVelocity(float dt) {
 		Vector3 linearVel = object->GetLinearVelocity();
 		position += linearVel * dt;
 		transform.SetPosition(position);
+		PhysicsMaterial* physMat = object->GetPhysMat();
+		float frameLinearHorizontalDamping = std::max(1.0f - (physMat->linearDampHorizontal * dt),0.0f);
+		float frameLinearVerticalDamping = std::max(1.0f - (physMat->linearDampVertical * dt),0.0f);
+		float frameAngularDamping = std::max(1.0f - (physMat->angularDamp * dt),0.0f);
 
-		linearVel = linearVel * frameLinearDamping;
+		linearVel.x = linearVel.x * frameLinearHorizontalDamping;
+		linearVel.z = linearVel.z * frameLinearHorizontalDamping;
+		linearVel.y = linearVel.y * frameLinearVerticalDamping;
 		object->SetLinearVelocity(linearVel);
 
 		Quaternion orientation = transform.GetOrientation();
@@ -406,7 +411,7 @@ void PhysicsSystem::IntegrateVelocity(float dt) {
 		orientation.Normalise();
 		transform.SetOrientation(orientation);
 
-		float frameAngularDamping = 1.0f - (0.4f * dt);
+		
 		angVel = angVel * frameAngularDamping;
 		object->SetAngularVelocity(angVel);
 

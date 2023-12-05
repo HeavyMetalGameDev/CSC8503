@@ -1,4 +1,5 @@
 #pragma once
+#include "PhysicsMaterial.h"
 using namespace NCL::Maths;
 
 namespace NCL {
@@ -83,6 +84,9 @@ namespace NCL {
 				return inverseInteriaTensor;
 			}
 
+			PhysicsMaterial* GetPhysMat() { return physMat; }
+			void SetPhysMat(PhysicsMaterial* pm) { physMat = pm; }
+
 		protected:
 			const CollisionVolume* volume;
 			Transform*		transform;
@@ -95,6 +99,7 @@ namespace NCL {
 			bool isSleeping = false;
 			bool isDynamic;
 
+			PhysicsMaterial* physMat;
 			//linear stuff
 			Vector3 linearVelocity;
 			Vector3 force;

@@ -784,6 +784,8 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="FirstPersonInputComponent.cpp" />
     <ClCompile Include="MovementApplierComponent.cpp" />
     <ClCompile Include="MovementInput.cpp" />
+    <ClCompile Include="PlayerInputComponent.cpp" />
+    <ClCompile Include="SimpleChaseComponent.cpp" />
     <ClInclude Include="..\CSC8503\TestComponent.h" />
     <ClInclude Include="C:\Users\c0034428\Documents\CSC8503\CSC8503CoreClasses\CMakeFiles\CSC8503CoreClasses.dir\Debug\cmake_pch.hxx" />
     <ClInclude Include="C:\Users\c0034428\Documents\CSC8503\CSC8503CoreClasses\CMakeFiles\CSC8503CoreClasses.dir\Release\cmake_pch.hxx" />
@@ -791,6 +793,9 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="FirstPersonInputComponent.h" />
     <ClInclude Include="MovementApplierComponent.h" />
     <ClInclude Include="MovementInput.h" />
+    <ClInclude Include="PhysicsMaterial.h" />
+    <ClInclude Include="PlayerInputComponent.h" />
+    <ClInclude Include="SimpleChaseComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="C:\Users\c0034428\Documents\CSC8503\ZERO_CHECK.vcxproj">
