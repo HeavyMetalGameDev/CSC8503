@@ -786,6 +786,8 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="MovementInput.cpp" />
     <ClCompile Include="ObjectPickupComponent.cpp" />
     <ClCompile Include="PlayerInputComponent.cpp" />
+    <ClCompile Include="PlayerValuesComponent.cpp" />
+    <ClCompile Include="PointPickupComponent.cpp" />
     <ClCompile Include="SimpleChaseComponent.cpp" />
     <ClCompile Include="TriggerComponent.cpp" />
     <ClInclude Include="..\CSC8503\TestComponent.h" />
@@ -798,6 +800,8 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="ObjectPickupComponent.h" />
     <ClInclude Include="PhysicsMaterial.h" />
     <ClInclude Include="PlayerInputComponent.h" />
+    <ClInclude Include="PlayerValuesComponent.h" />
+    <ClInclude Include="PointPickupComponent.h" />
     <ClInclude Include="SimpleChaseComponent.h" />
     <ClInclude Include="TriggerComponent.h" />
   </ItemGroup>

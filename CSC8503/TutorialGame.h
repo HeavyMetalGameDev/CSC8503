@@ -49,14 +49,13 @@ namespace NCL {
 			GameObject* AddFloorToWorld(const Vector3& position);
 			GameObject* AddSphereToWorld(const Vector3& position, float radius, float inverseMass = 10.0f);
 			GameObject* AddCapsuleToWorld(const Vector3& position, float radius,float halfHeight, float inverseMass = 10.0f);
+			GameObject* AddPointPickupToWorld(const Vector3& position, int points);
 			GameObject* AddSphereTriggerToWorld(const Vector3& position, float radius);
 			GameObject* AddCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass = 10.0f);
 
 			GameObject* AddPlayerToWorld(const Vector3& position);
 			GameObject* AddEnemyToWorld(const Vector3& position);
 			GameObject* AddBonusToWorld(const Vector3& position);
-
-			GameObject* AddTestComponentObjectToWorld(const Vector3& position);
 
 			StateGameObject* AddStateObjectToWorld(const Vector3& position);
 			StateGameObject* testStateObject;

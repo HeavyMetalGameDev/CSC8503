@@ -9,6 +9,8 @@
 #include "PlayerInputComponent.h"
 #include "ObjectPickupComponent.h"
 #include "TriggerComponent.h"
+#include "PointPickupComponent.h"
+#include "PlayerValuesComponent.h"
 
 #include "PositionConstraint.h"
 #include "OrientationConstraint.h"
@@ -281,6 +283,12 @@ void TutorialGame::InitWorld() {
 	//AddCubeToWorld(Vector3(0, 5, 7), Vector3(1, 1, 1), 0.02f);
 	//AddEnemyToWorld(Vector3(3, 10, 0));
 	//AddSphereToWorld(Vector3(4, 10, 0), 1, 0.7f);
+
+	AddPointPickupToWorld(Vector3(8, -2, 0),10);
+	AddPointPickupToWorld(Vector3(4, -2, 0), 10);
+	AddPointPickupToWorld(Vector3(5, -2, 4), 10);
+	AddPointPickupToWorld(Vector3(6, -2, 0), 10);
+
 	AddCapsuleToWorld(Vector3(3, 10, 0), 1, 1,0.7f);
 	//AddTestComponentObjectToWorld(Vector3(5, 5, 5));
 	world->StartWorld();
@@ -399,6 +407,32 @@ GameObject* TutorialGame::AddSphereTriggerToWorld(const Vector3& position, float
 	return sphere;
 }
 
+GameObject* TutorialGame::AddPointPickupToWorld(const Vector3& position, int points) {
+	GameObject* sphere = new GameObject();
+	sphere->SetTag("PointPickup");
+
+	Vector3 sphereSize = Vector3(.5f, .5f, .5f);
+	SphereVolume* volume = new SphereVolume(.5f);
+	sphere->SetBoundingVolume((CollisionVolume*)volume);
+
+	sphere->GetTransform()
+		.SetScale(sphereSize)
+		.SetPosition(position);
+
+	sphere->SetRenderObject(new RenderObject(&sphere->GetTransform(), sphereMesh, basicTex, basicShader));
+	sphere->SetPhysicsObject(new PhysicsObject(&sphere->GetTransform(), sphere->GetBoundingVolume(), true, true));
+
+	PointPickupComponent* ppc = new PointPickupComponent(world,sphere, points);
+	sphere->AddComponent(ppc);
+
+	//PhysicsMaterial* spherePhys;
+	//if (world->TryGetPhysMat("Bouncy", spherePhys))so->SetPhysMat(spherePhys);
+
+	world->AddGameObject(sphere);
+
+	return sphere;
+}
+
 GameObject* TutorialGame::AddCapsuleToWorld(const Vector3& position, float radius, float halfHeight, float inverseMass) {
 	GameObject* capsule = new GameObject();
 	capsule->SetTag("Capsule");
@@ -480,6 +514,7 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 	MovementApplierComponent* ma = new MovementApplierComponent(&character->GetTransform(), character->GetPhysicsObject(),7000.0f);
 	FirstPersonInputComponent* fps = new FirstPersonInputComponent(&world->GetMainCamera());
 	PlayerInputComponent* pic = new PlayerInputComponent(character);
+	PlayerValuesComponent* pvc = new PlayerValuesComponent();
 
 	GameObject* pickupObject = AddSphereTriggerToWorld(Vector3(-1, 10, 0), 0.6f);
 
@@ -493,6 +528,7 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 	character->AddComponent(ma);
 	character->AddComponent(pic);
 	character->AddComponent(opc);
+	character->AddComponent(pvc);
 
 	world->AddGameObject(character);
 
@@ -579,27 +615,6 @@ StateGameObject* TutorialGame::AddStateObjectToWorld(const Vector3& position) {
 	return stateObj;
 }
 
-GameObject* TutorialGame::AddTestComponentObjectToWorld(const Vector3& position) {
-	GameObject* obj = new GameObject();
-
-	SphereVolume* volume = new SphereVolume(0.5f);
-	obj->SetBoundingVolume((CollisionVolume*)volume);
-	obj->GetTransform()
-		.SetScale(Vector3(2, 2, 2))
-		.SetPosition(position);
-
-	obj->SetRenderObject(new RenderObject(&obj->GetTransform(), cubeMesh, nullptr, basicShader));
-	obj->SetPhysicsObject(new PhysicsObject(&obj->GetTransform(), obj->GetBoundingVolume()));
-
-	obj->GetPhysicsObject()->SetInverseMass(0.5f);
-	obj->GetPhysicsObject()->InitSphereInertia();
-
-	obj->AddComponent(new TestComponent(obj));
-
-	world->AddGameObject(obj);
-
-	return obj;
-}
 
 void TutorialGame::InitDefaultFloor() {
 	AddFloorToWorld(Vector3(0, -5, 0));

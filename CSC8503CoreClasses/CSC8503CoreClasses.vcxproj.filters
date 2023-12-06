@@ -256,7 +256,15 @@
     <ClCompile Include="ObjectPickupComponent.cpp">
       <Filter>Components</Filter>
     </ClCompile>
-    <ClCompile Include="TriggerComponent.cpp" />
+    <ClCompile Include="PointPickupComponent.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="TriggerComponent.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerValuesComponent.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="C:\Users\c0034428\Documents\CSC8503\CSC8503CoreClasses\CMakeFiles\CSC8503CoreClasses.dir\Debug\cmake_pch.hxx">
@@ -292,7 +300,15 @@
     <ClInclude Include="ObjectPickupComponent.h">
       <Filter>Components</Filter>
     </ClInclude>
-    <ClInclude Include="TriggerComponent.h" />
+    <ClInclude Include="PointPickupComponent.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="TriggerComponent.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerValuesComponent.h">
+      <Filter>Components</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="C:\Users\c0034428\Documents\CSC8503\CSC8503CoreClasses\CMakeLists.txt" />
