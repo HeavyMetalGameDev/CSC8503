@@ -255,11 +255,13 @@ bool CollisionDetection::AABBIntersection(const AABBVolume& volumeA, const Trans
 		};
 		float penetration = FLT_MAX;
 		Vector3 bestAxis;
-
+		Vector3 worldContactPoint;
 		for (int i = 0; i < 6; i++) {
 			if (distances[i] < penetration) {
 				penetration = distances[i];
 				bestAxis = faces[i];
+				worldContactPoint = bestAxis;
+
 			}
 		}
 		collisionInfo.AddContactPoint(Vector3(), Vector3(), bestAxis, penetration);

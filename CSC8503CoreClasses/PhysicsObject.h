@@ -10,7 +10,7 @@ namespace NCL {
 
 		class PhysicsObject	{
 		public:
-			PhysicsObject(Transform* parentTransform, const CollisionVolume* parentVolume,bool isDynamic = true, bool isTrigger = false);
+			PhysicsObject(Transform* parentTransform, const CollisionVolume* parentVolume,bool isDynamic = true, bool isTrigger = false, int colLayer = 1);
 			~PhysicsObject();
 
 			Vector3 GetLinearVelocity() const {
@@ -51,6 +51,13 @@ namespace NCL {
 			bool IsSleeping() { return isSleeping; }
 			bool IsDynamic() { return isDynamic; }
 			bool IsTrigger() { return isTrigger; }
+			bool CollidedLastFrame() { return collidedLastFrame; }
+			void SetCollided(bool c) { collidedLastFrame = c; }
+			bool IsGrounded() { return isGrounded; }
+			void SetIsGrounded(bool g) { isGrounded = g; }
+
+			void SetCollisionLayer(int l) { collisionLayer = l; }
+			int GetCollisionLayer() { return collisionLayer; }
 
 			void SetAwake() {
 				isSleeping = false;
@@ -92,6 +99,8 @@ namespace NCL {
 			const CollisionVolume* volume;
 			Transform*		transform;
 
+			int collisionLayer;
+
 			float inverseMass;
 			float elasticity;
 			float friction;
@@ -100,6 +109,8 @@ namespace NCL {
 			bool isSleeping = false;
 			bool isDynamic;
 			bool isTrigger = false;
+			bool collidedLastFrame = false;
+			bool isGrounded = false;
 
 			PhysicsMaterial* physMat;
 			//linear stuff

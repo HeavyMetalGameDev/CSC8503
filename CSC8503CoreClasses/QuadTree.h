@@ -69,6 +69,10 @@ namespace NCL {
 				}
 			}
 
+			bool CheckIfContainedInNode(T& object, const Vector3& objectPos, const Vector3& objectSize, int depthLeft, int maxSize) {
+				
+			}
+
 			void Split() {
 				Vector2 halfSize = size / 2.0f;
 				children = new QuadTreeNode<T>[4];
@@ -122,6 +126,8 @@ namespace NCL {
 			void Insert(T object, const Vector3& pos, const Vector3& size) {
 				root.Insert(object, pos, size, maxDepth, maxSize);
 			}
+
+
 
 			void DebugDraw() {
 				root.DebugDraw();

@@ -4,7 +4,7 @@
 using namespace NCL;
 using namespace CSC8503;
 
-PhysicsObject::PhysicsObject(Transform* parentTransform, const CollisionVolume* parentVolume, bool isDynamic, bool isTrigger)	{
+PhysicsObject::PhysicsObject(Transform* parentTransform, const CollisionVolume* parentVolume, bool isDynamic, bool isTrigger, int colLayer)	{
 	transform	= parentTransform;
 	volume		= parentVolume;
 
@@ -13,6 +13,7 @@ PhysicsObject::PhysicsObject(Transform* parentTransform, const CollisionVolume* 
 	friction	= 0.8f;
 	this->isDynamic = isDynamic;
 	this->isTrigger = isTrigger;
+	collisionLayer = colLayer;
 }
 
 PhysicsObject::~PhysicsObject()	{
@@ -39,8 +40,7 @@ void PhysicsObject::AddForce(const Vector3& addedForce) {
 
 void PhysicsObject::AddForceAtPosition(const Vector3& addedForce, const Vector3& position) {
 	Vector3 localPos = position - transform->GetPosition();
-
-	force  += addedForce;
+	force += addedForce;
 	torque += Vector3::Cross(localPos, addedForce);
 	isSleeping = false;
 }

@@ -9,6 +9,7 @@
 #include "OBBVolume.h"
 #include "SphereVolume.h"
 #include "CapsuleVolume.h"
+#include "PhysicsObject.h"
 #include "Ray.h"
 
 using NCL::Camera;
@@ -115,7 +116,7 @@ namespace NCL {
 		static Matrix4		GenerateInverseView(const Camera &c);
 
 	protected:
-
+		std::map<int, bool> layerMatrix;
 	private:
 		CollisionDetection()	{}
 		~CollisionDetection()	{}

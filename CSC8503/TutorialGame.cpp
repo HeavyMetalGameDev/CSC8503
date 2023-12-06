@@ -45,6 +45,7 @@ TutorialGame::TutorialGame() : controller(*Window::GetWindow()->GetKeyboard(), *
 	controller.MapAxis(4, "YLook");
 
 	InitialiseAssets();
+	physics->BuildStaticQuadTree();
 }
 
 /*
@@ -275,8 +276,8 @@ void TutorialGame::InitWorld() {
 
 	InitDefaultFloor();
 	BridgeConstraintTest();
-	testStateObject = AddStateObjectToWorld(Vector3(0, 10, 0));
-	AddPlayerToWorld(Vector3(0, 10, 0));
+	//testStateObject = AddStateObjectToWorld(Vector3(0, 10, 0));
+	AddPlayerToWorld(Vector3(0, 5, 0));
 	AddCubeToWorld(Vector3(0, 5, 7), Vector3(1, 1, 1), 0.02f);
 	//AddEnemyToWorld(Vector3(3, 10, 0));
 	//AddTestComponentObjectToWorld(Vector3(5, 5, 5));
@@ -386,7 +387,7 @@ GameObject* TutorialGame::AddSphereTriggerToWorld(const Vector3& position, float
 		.SetPosition(position);
 
 	//sphere->SetRenderObject(new RenderObject(&sphere->GetTransform(), sphereMesh, basicTex, basicShader));
-	sphere->SetPhysicsObject(new PhysicsObject(&sphere->GetTransform(), sphere->GetBoundingVolume(),true,true));
+	sphere->SetPhysicsObject(new PhysicsObject(&sphere->GetTransform(), sphere->GetBoundingVolume(),true,true,PICKUP_SPHERE_LAYER));
 
 	//PhysicsMaterial* spherePhys;
 	//if (world->TryGetPhysMat("Bouncy", spherePhys))so->SetPhysMat(spherePhys);
@@ -435,7 +436,7 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 		.SetPosition(position);
 
 	//character->SetRenderObject(new RenderObject(&character->GetTransform(), charMesh, nullptr, basicShader));
-	character->SetPhysicsObject(new PhysicsObject(&character->GetTransform(), character->GetBoundingVolume()));
+	character->SetPhysicsObject(new PhysicsObject(&character->GetTransform(), character->GetBoundingVolume(),true,false,PLAYER_LAYER));
 
 	PhysicsObject* co = character->GetPhysicsObject();
 	co->SetInverseMass(inverseMass);

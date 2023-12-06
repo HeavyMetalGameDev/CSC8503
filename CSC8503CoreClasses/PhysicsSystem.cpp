@@ -9,6 +9,7 @@
 #include "Debug.h"
 #include "Window.h"
 #include <functional>
+#define IMPULSE_THRESHOLD 0.5f;
 
 
 using namespace NCL;
@@ -20,9 +21,25 @@ PhysicsSystem::PhysicsSystem(GameWorld& g) : gameWorld(g) {
 	dTOffset = 0.0f;
 	globalDamping = 0.95f;
 	SetGravity(Vector3(0.0f, -13.0f, 0.0f));
+	staticTree = new QuadTree<GameObject*>(Vector2(1024, 1024), 7, 6);
 }
 
 PhysicsSystem::~PhysicsSystem() {
+	delete staticTree;
+}
+
+void PhysicsSystem::BuildStaticQuadTree() {
+	std::vector<GameObject*>::const_iterator first;
+	std::vector<GameObject*>::const_iterator last;
+	gameWorld.GetObjectIterators(first, last);
+	for (auto i = first; i != last; i++) {
+		Vector3 halfSizes;
+		if (!(*i)->GetBroadphaseAABB(halfSizes) || (*i)->GetPhysicsObject()->IsDynamic())continue;
+
+		Vector3 pos = (*i)->GetTransform().GetPosition();
+		staticTree->Insert(*i, pos, halfSizes);
+	}
+	return;
 }
 
 void PhysicsSystem::SetGravity(const Vector3& g) {
@@ -232,11 +249,14 @@ so that objects separate back out.
 void PhysicsSystem::ImpulseResolveCollision(GameObject& a, GameObject& b, CollisionDetection::ContactPoint& p) const {
 	PhysicsObject* physA = a.GetPhysicsObject();
 	PhysicsObject* physB = b.GetPhysicsObject();
+	physA->SetCollided(true);
+	physB->SetCollided(true);
 	Transform& transformA = a.GetTransform();
 	Transform& transformB = b.GetTransform();
 
 	float totalMass = physA->GetInverseMass() + physB->GetInverseMass();
 	if (physA->IsTrigger() || physB->IsTrigger())return;
+
 	if (totalMass == 0)return;
 
 	transformA.SetPosition(transformA.GetPosition() - (p.normal * p.penetration * (physA->GetInverseMass()/totalMass)));
@@ -272,8 +292,8 @@ void PhysicsSystem::ImpulseResolveCollision(GameObject& a, GameObject& b, Collis
 	physA->ApplyAngularImpulse(aCross);
 	physB->ApplyAngularImpulse(bCross);
 
-	//if (physA->GetAngularVelocity().Length() + physA->GetLinearVelocity().Length() < 0.6f)physA->SetSleeping();
-	//if (physB->GetAngularVelocity().Length() + physB->GetLinearVelocity().Length() < 0.6f)physB->SetSleeping();
+	if (physA->GetAngularVelocity().Length() + physA->GetLinearVelocity().Length() < 0.6f)physA->SetSleeping();
+	if (physB->GetAngularVelocity().Length() + physB->GetLinearVelocity().Length() < 0.6f)physB->SetSleeping();
 
 }
 
@@ -288,7 +308,6 @@ compare the collisions that we absolutely need to.
 void PhysicsSystem::BroadPhase() {
 	broadphaseCollisions.clear();
 	QuadTree<GameObject*> dynamicTree(Vector2(1024, 1024), 7, 6);
-	QuadTree<GameObject*> staticTree(Vector2(1024, 1024), 7, 6);
 
 	std::vector<GameObject*>::const_iterator first;
 	std::vector<GameObject*>::const_iterator last;
@@ -301,10 +320,12 @@ void PhysicsSystem::BroadPhase() {
 		dynamicTree.Insert(*i, pos, halfSizes);
 	}
 	dynamicTree.OperateOnContents(
-		[&](std::list<QuadTreeEntry<GameObject*>>& data) {
+		[&](std::list<QuadTreeEntry<GameObject*>>& data) { //for every dynamic node
 			CollisionDetection::CollisionInfo info;
 			for (auto i = data.begin(); i != data.end(); i++) {
 				for (auto j = std::next(i); j != data.end(); j++) {
+					if ((*i).object->GetPhysicsObject()->IsSleeping() && (*j).object->GetPhysicsObject()->IsSleeping())continue;
+					if (!layerMatrix[(*i).object->GetPhysicsObject()->GetCollisionLayer() | (*j).object->GetPhysicsObject()->GetCollisionLayer()])continue;
 					info.a = std::min((*i).object, (*j).object);
 					info.b = std::max((*i).object, (*j).object);
 					broadphaseCollisions.insert(info);
@@ -312,6 +333,9 @@ void PhysicsSystem::BroadPhase() {
 			}
 		}
 	);
+	
+
+
 }
 
 /*
@@ -427,6 +451,8 @@ void PhysicsSystem::IntegrateVelocity(float dt) {
 		else object->ResetSleepTimer();
 
 		if (object->GetSleepTimer() >= sleepTimeThreshold)object->SetSleeping();
+
+		object->SetCollided(false);
 	}
 }
 
