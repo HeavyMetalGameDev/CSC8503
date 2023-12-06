@@ -265,6 +265,9 @@
     <ClCompile Include="PlayerValuesComponent.cpp">
       <Filter>Components</Filter>
     </ClCompile>
+    <ClCompile Include="KeyComponent.cpp">
+      <Filter>Components</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="C:\Users\c0034428\Documents\CSC8503\CSC8503CoreClasses\CMakeFiles\CSC8503CoreClasses.dir\Debug\cmake_pch.hxx">
@@ -307,6 +310,9 @@
       <Filter>Components</Filter>
     </ClInclude>
     <ClInclude Include="PlayerValuesComponent.h">
+      <Filter>Components</Filter>
+    </ClInclude>
+    <ClInclude Include="KeyComponent.h">
       <Filter>Components</Filter>
     </ClInclude>
   </ItemGroup>

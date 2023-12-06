@@ -11,6 +11,7 @@
 #include "TriggerComponent.h"
 #include "PointPickupComponent.h"
 #include "PlayerValuesComponent.h"
+#include "KeyComponent.h"
 
 #include "PositionConstraint.h"
 #include "OrientationConstraint.h"
@@ -111,12 +112,6 @@ void TutorialGame::UpdateGame(float dt) {
 	UpdateKeys();
 
 	if (testStateObject)testStateObject->Update(dt);
-	if (useGravity) {
-		Debug::Print("(G)ravity on", Vector2(5, 95), Debug::RED);
-	}
-	else {
-		Debug::Print("(G)ravity off", Vector2(5, 95), Debug::RED);
-	}
 
 	RayCollision closestCollision;
 	if (Window::GetKeyboard()->KeyPressed(KeyCodes::K) && selectionObject) {
@@ -274,7 +269,7 @@ void TutorialGame::InitWorld() {
 	world->ClearAndErase();
 	physics->Clear();
 
-	//InitMixedGridWorld(15, 15, 3.5f, 3.5f);
+	InitMixedGridWorld(15, 15, 3.5f, 3.5f);
 
 	InitDefaultFloor();
 	//BridgeConstraintTest();
@@ -284,10 +279,15 @@ void TutorialGame::InitWorld() {
 	//AddEnemyToWorld(Vector3(3, 10, 0));
 	//AddSphereToWorld(Vector3(4, 10, 0), 1, 0.7f);
 
+
+	//------------ADD PICKUPS---------------------------------------------------------------------------------------------------------------------
 	AddPointPickupToWorld(Vector3(8, -2, 0),10);
 	AddPointPickupToWorld(Vector3(4, -2, 0), 10);
 	AddPointPickupToWorld(Vector3(5, -2, 4), 10);
 	AddPointPickupToWorld(Vector3(6, -2, 0), 10);
+
+	AddKeyDoorPairToWorld(Vector3(6, -2, 6), Vector3(8, -2, 8), Debug::YELLOW);
+	AddKeyDoorPairToWorld(Vector3(12, -2, 12), Vector3(16, -2, 16), Debug::MAGENTA);
 
 	AddCapsuleToWorld(Vector3(3, 10, 0), 1, 1,0.7f);
 	//AddTestComponentObjectToWorld(Vector3(5, 5, 5));
@@ -420,7 +420,8 @@ GameObject* TutorialGame::AddPointPickupToWorld(const Vector3& position, int poi
 		.SetPosition(position);
 
 	sphere->SetRenderObject(new RenderObject(&sphere->GetTransform(), sphereMesh, basicTex, basicShader));
-	sphere->SetPhysicsObject(new PhysicsObject(&sphere->GetTransform(), sphere->GetBoundingVolume(), true, true));
+	sphere->SetPhysicsObject(new PhysicsObject(&sphere->GetTransform(), sphere->GetBoundingVolume(), true, true,STATIC_LAYER));
+	sphere->GetRenderObject()->SetColour(Debug::BLUE);
 
 	PointPickupComponent* ppc = new PointPickupComponent(world,sphere, points);
 	sphere->AddComponent(ppc);
@@ -571,24 +572,55 @@ GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position) {
 	return character;
 }
 
-GameObject* TutorialGame::AddBonusToWorld(const Vector3& position) {
-	GameObject* apple = new GameObject();
+GameObject* TutorialGame::AddKeyDoorPairToWorld(const Vector3& keyPosition, const Vector3& doorPosition, const Vector4& colour) { //returns the key object
+	GameObject* key = new GameObject();
+	GameObject* door = new GameObject();
+	Vector3 keyScale(0.2f, 0.2f, 0.3f);
+	Vector3 doorScale(2.0f, 2.0f, 0.5f);
 
-	SphereVolume* volume = new SphereVolume(0.5f);
-	apple->SetBoundingVolume((CollisionVolume*)volume);
-	apple->GetTransform()
-		.SetScale(Vector3(2, 2, 2))
-		.SetPosition(position);
+	AABBVolume* keyVolume = new AABBVolume(keyScale);
+	key->SetBoundingVolume((CollisionVolume*)keyVolume);
 
-	apple->SetRenderObject(new RenderObject(&apple->GetTransform(), bonusMesh, nullptr, basicShader));
-	apple->SetPhysicsObject(new PhysicsObject(&apple->GetTransform(), apple->GetBoundingVolume()));
+	AABBVolume* doorVolume = new AABBVolume(doorScale);
+	door->SetBoundingVolume((CollisionVolume*)doorVolume);
 
-	apple->GetPhysicsObject()->SetInverseMass(1.0f);
-	apple->GetPhysicsObject()->InitSphereInertia();
+	key->GetTransform()
+		.SetPosition(keyPosition)
+		.SetScale(keyScale * 2);
 
-	world->AddGameObject(apple);
+	door->GetTransform()
+		.SetPosition(doorPosition)
+		.SetScale(doorScale * 2);
 
-	return apple;
+	key->SetRenderObject(new RenderObject(&key->GetTransform(), cubeMesh, basicTex, basicShader));
+	key->SetPhysicsObject(new PhysicsObject(&key->GetTransform(), key->GetBoundingVolume()));
+	key->GetRenderObject()->SetColour(colour);
+
+	door->SetRenderObject(new RenderObject(&door->GetTransform(), cubeMesh, basicTex, basicShader));
+	door->SetPhysicsObject(new PhysicsObject(&door->GetTransform(), door->GetBoundingVolume(),false)); //door is static
+	door->GetRenderObject()->SetColour(colour);
+
+	PhysicsObject* ko = key->GetPhysicsObject();
+	ko->SetInverseMass(0.7f);
+	ko->InitCubeInertia();
+
+	PhysicsObject* doorO = door->GetPhysicsObject();
+	doorO->SetInverseMass(0);
+	doorO->InitCubeInertia();
+
+	PhysicsMaterial* keyPhys;
+	if (world->TryGetPhysMat("Standard", keyPhys))ko->SetPhysMat(keyPhys);
+
+	PhysicsMaterial* doorPhys;
+	if (world->TryGetPhysMat("Standard", doorPhys))doorO->SetPhysMat(doorPhys);
+
+	KeyComponent* kc = new KeyComponent(key, door, world);
+	key->AddComponent(kc);
+
+	world->AddGameObject(key);
+	world->AddGameObject(door);
+
+	return key;
 }
 
 StateGameObject* TutorialGame::AddStateObjectToWorld(const Vector3& position) {
@@ -618,12 +650,6 @@ StateGameObject* TutorialGame::AddStateObjectToWorld(const Vector3& position) {
 
 void TutorialGame::InitDefaultFloor() {
 	AddFloorToWorld(Vector3(0, -5, 0));
-}
-
-void TutorialGame::InitGameExamples() {
-	AddPlayerToWorld(Vector3(0, 5, 0));
-	AddEnemyToWorld(Vector3(5, 5, 0));
-	AddBonusToWorld(Vector3(10, 5, 0));
 }
 
 void TutorialGame::InitSphereGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing, float radius) {

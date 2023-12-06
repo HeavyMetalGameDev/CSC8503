@@ -18,7 +18,10 @@ namespace NCL::CSC8503{
 	}
 
 	void PlayerInputComponent::PhysicsUpdate(float dt) {
-		if(hasJumped)physObject->ApplyLinearImpulse({ 0,jumpPower,0 });
+		if (hasJumped) {
+			gameObject->GetTransform().SetPosition(gameObject->GetTransform().GetPosition() + Vector3(0, .1f, 0));
+			physObject->ApplyLinearImpulse({ 0,jumpPower,0 });
+		}
 		hasJumped = false;
 	}
 }
