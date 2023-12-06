@@ -16,7 +16,7 @@ using namespace NCL;
 using namespace CSC8503;
 
 PhysicsSystem::PhysicsSystem(GameWorld& g) : gameWorld(g) {
-	applyGravity = true;
+	applyGravity = false;
 	useBroadPhase = true;//can be changed
 	dTOffset = 0.0f;
 	globalDamping = 0.95f;

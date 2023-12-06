@@ -272,14 +272,16 @@ void TutorialGame::InitWorld() {
 	world->ClearAndErase();
 	physics->Clear();
 
-	InitMixedGridWorld(15, 15, 3.5f, 3.5f);
+	//InitMixedGridWorld(15, 15, 3.5f, 3.5f);
 
 	InitDefaultFloor();
-	BridgeConstraintTest();
+	//BridgeConstraintTest();
 	//testStateObject = AddStateObjectToWorld(Vector3(0, 10, 0));
 	AddPlayerToWorld(Vector3(0, 5, 0));
-	AddCubeToWorld(Vector3(0, 5, 7), Vector3(1, 1, 1), 0.02f);
+	//AddCubeToWorld(Vector3(0, 5, 7), Vector3(1, 1, 1), 0.02f);
 	//AddEnemyToWorld(Vector3(3, 10, 0));
+	//AddSphereToWorld(Vector3(4, 10, 0), 1, 0.7f);
+	AddCapsuleToWorld(Vector3(3, 10, 0), 1, 1,0.7f);
 	//AddTestComponentObjectToWorld(Vector3(5, 5, 5));
 	world->StartWorld();
 }
@@ -326,7 +328,7 @@ GameObject* TutorialGame::AddFloorToWorld(const Vector3& position) {
 		.SetPosition(position);
 
 	floor->SetRenderObject(new RenderObject(&floor->GetTransform(), cubeMesh, basicTex, basicShader));
-	floor->SetPhysicsObject(new PhysicsObject(&floor->GetTransform(), floor->GetBoundingVolume(),false));
+	floor->SetPhysicsObject(new PhysicsObject(&floor->GetTransform(), floor->GetBoundingVolume(),false,false,STATIC_LAYER));
 
 	PhysicsObject* fo = floor->GetPhysicsObject();
 	fo->SetInverseMass(0);
@@ -395,6 +397,32 @@ GameObject* TutorialGame::AddSphereTriggerToWorld(const Vector3& position, float
 	world->AddGameObject(sphere);
 
 	return sphere;
+}
+
+GameObject* TutorialGame::AddCapsuleToWorld(const Vector3& position, float radius, float halfHeight, float inverseMass) {
+	GameObject* capsule = new GameObject();
+	capsule->SetTag("Capsule");
+
+	CapsuleVolume* volume = new CapsuleVolume(halfHeight,radius);
+	capsule->SetBoundingVolume((CollisionVolume*)volume);
+
+	capsule->GetTransform()
+		.SetScale(Vector3(radius, radius, radius))
+		.SetPosition(position);
+
+	capsule->SetRenderObject(new RenderObject(&capsule->GetTransform(), capsuleMesh, basicTex, basicShader));
+	capsule->SetPhysicsObject(new PhysicsObject(&capsule->GetTransform(), capsule->GetBoundingVolume()));
+
+	PhysicsObject* co = capsule->GetPhysicsObject();
+	co->SetInverseMass(inverseMass);
+	co->InitSphereInertia();
+
+	PhysicsMaterial* capPhys;
+	if (world->TryGetPhysMat("Bouncy", capPhys))co->SetPhysMat(capPhys);
+
+	world->AddGameObject(capsule);
+
+	return capsule;
 }
 
 GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass) {
@@ -472,19 +500,19 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 }
 
 GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position) {
-	float meshSize		= 3.0f;
+	float meshSize		= 1.0f;
 	float inverseMass	= 0.5f;
 
 	GameObject* character = new GameObject();
 
-	AABBVolume* volume = new AABBVolume(Vector3(0.3f, 0.9f, 0.3f) * meshSize);
+	CapsuleVolume* volume = new CapsuleVolume(meshSize*0.5f, meshSize * 0.33f);
 	character->SetBoundingVolume((CollisionVolume*)volume);
 
 	character->GetTransform()
 		.SetScale(Vector3(meshSize, meshSize, meshSize))
 		.SetPosition(position);
 
-	character->SetRenderObject(new RenderObject(&character->GetTransform(), enemyMesh, nullptr, basicShader));
+	character->SetRenderObject(new RenderObject(&character->GetTransform(), capsuleMesh, nullptr, basicShader));
 	character->SetPhysicsObject(new PhysicsObject(&character->GetTransform(), character->GetBoundingVolume()));
 
 	PhysicsObject* co = character->GetPhysicsObject();
@@ -644,7 +672,7 @@ bool TutorialGame::SelectObject() {
 
 		if (Window::GetMouse()->ButtonDown(NCL::MouseButtons::Left)) {
 			if (selectionObject) {	//set colour to deselected;
-				selectionObject->GetRenderObject()->SetColour(Vector4(1, 1, 1, 1));
+				if (selectionObject->GetRenderObject())selectionObject->GetRenderObject()->SetColour(Vector4(1, 1, 1, 1));
 				selectionObject = nullptr;
 			}
 
@@ -653,8 +681,7 @@ bool TutorialGame::SelectObject() {
 			RayCollision closestCollision;
 			if (world->Raycast(ray, closestCollision, true)) {
 				selectionObject = (GameObject*)closestCollision.node;
-
-				selectionObject->GetRenderObject()->SetColour(Vector4(0, 1, 0, 1));
+				if(selectionObject->GetRenderObject())selectionObject->GetRenderObject()->SetColour(Vector4(0, 1, 0, 1));
 				return true;
 			}
 			else {

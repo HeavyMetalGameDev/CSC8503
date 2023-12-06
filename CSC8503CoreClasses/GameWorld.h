@@ -4,6 +4,7 @@
 #include "Ray.h"
 #include "CollisionDetection.h"
 #include "QuadTree.h"
+#include "PhysicsSystem.h"
 namespace NCL {
 		class Camera;
 		using Maths::Ray;
@@ -70,6 +71,12 @@ namespace NCL {
 			std::vector<GameObject*> gameObjects;
 			std::vector<Constraint*> constraints;
 			std::map<std::string, PhysicsMaterial> physicsMaterials;
+			const std::map<int, bool> raycastCollideMap = {
+				{1,true},
+				{2,false},
+				{4,true},
+				{8,false}};
+
 			PerspectiveCamera mainCamera;
 
 			bool shuffleConstraints;

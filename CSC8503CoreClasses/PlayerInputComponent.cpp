@@ -11,9 +11,14 @@ namespace NCL::CSC8503{
 			RayCollision rc;
 			if (worldRef->Raycast(ray, rc, true, gameObject)) {
 				if ((rc.collidedAt - gameObject->GetTransform().GetPosition()).Length() < 1.5f) {
-					physObject->ApplyLinearImpulse({ 0,jumpPower,0 });
+					hasJumped = true;
 				}
 			}
 		}
+	}
+
+	void PlayerInputComponent::PhysicsUpdate(float dt) {
+		if(hasJumped)physObject->ApplyLinearImpulse({ 0,jumpPower,0 });
+		hasJumped = false;
 	}
 }

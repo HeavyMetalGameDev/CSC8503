@@ -9,9 +9,11 @@ namespace NCL::CSC8503 {
         PlayerInputComponent(GameObject* go) { gameObject = go; }
         void Start(GameWorld* gw)override { worldRef = gw; physObject = gameObject->GetPhysicsObject(); };
         virtual void Update(float dt) override;
+        virtual void PhysicsUpdate(float dt) override;
         void SetJumpPower(float jp) { jumpPower = jp; }
 
     protected:
+        bool hasJumped=false;
         float jumpPower = 15;
         GameWorld* worldRef;
         PhysicsObject* physObject;

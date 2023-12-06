@@ -48,6 +48,7 @@ namespace NCL {
 			void BridgeConstraintTest();
 			GameObject* AddFloorToWorld(const Vector3& position);
 			GameObject* AddSphereToWorld(const Vector3& position, float radius, float inverseMass = 10.0f);
+			GameObject* AddCapsuleToWorld(const Vector3& position, float radius,float halfHeight, float inverseMass = 10.0f);
 			GameObject* AddSphereTriggerToWorld(const Vector3& position, float radius);
 			GameObject* AddCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass = 10.0f);
 
