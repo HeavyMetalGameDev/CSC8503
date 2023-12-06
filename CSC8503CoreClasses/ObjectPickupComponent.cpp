@@ -1,5 +1,6 @@
 #include "C:/Users/c0034428/Documents/CSC8503/CSC8503CoreClasses/CMakeFiles/CSC8503CoreClasses.dir/Debug/cmake_pch.hxx"
 #include "ObjectPickupComponent.h"
+#include "PhysicsObject.h"
 #include "Window.h"
 #define DEGREES_TO_RAD 0.0174532925f
 namespace NCL::CSC8503 {
@@ -12,7 +13,7 @@ namespace NCL::CSC8503 {
 		float yDir = sin(camera->GetPitch() * DEGREES_TO_RAD);
 		float zDir = sin(-normYaw) * cos(camera->GetPitch() * DEGREES_TO_RAD);
 
-		Vector3 lookDirection(zDir, yDir, -xDir);
+		lookDirection  = Vector3(zDir, yDir, -xDir);
 	
 		triggerObject->GetTransform().SetPosition(gameObject->GetTransform().GetPosition() + (lookDirection*2.5f));
 
@@ -20,22 +21,57 @@ namespace NCL::CSC8503 {
 			isEPressed = true;
 		}
 		else isEPressed = false;
+
+		if (Window::GetMouse()->ButtonPressed(NCL::MouseButtons::Left) && hasObject) {
+			OnObjectDrop();
+			heldObject->GetPhysicsObject()->AddForce(lookDirection * throwForce);
+		}
 	}
 
 	void ObjectPickupComponent::PhysicsUpdate(float dt) {
 		if (isEPressed) {
 			if (!hasObject) {
 				if (tc->IsTriggering()) {
-					hasObject = true;
-					heldObject = tc->GetTriggeredObject();
+					if (tc->GetTriggeredObject()->GetPhysicsObject()->IsDynamic()) {
+						hasObject = true;
+						heldObject = tc->GetTriggeredObject();
+						heldObject->GetTransform().SetPosition(triggerObject->GetTransform().GetPosition());
+						physMatCache = heldObject->GetPhysicsObject()->GetPhysMat();
+						heldObject->GetPhysicsObject()->SetPhysMat(tempObjectPhysMat);
+					}
 				}
 			}
 			else {
-				hasObject = false;
+				OnObjectDrop();
 			}
 		}
 		if (hasObject) {
-			heldObject->GetTransform().SetPosition(triggerObject->GetTransform().GetPosition());
+			ApplyForceToObject();
 		}
+	}
+
+	void ObjectPickupComponent::ApplyForceToObject() {
+		Vector3 objectDirection = triggerObject->GetTransform().GetPosition() - heldObject->GetTransform().GetPosition();
+		float distance = objectDirection.Length();
+		if (distance > maxDistance) {
+			OnObjectDrop();
+			return;
+		}
+		objectDirection.Normalise();
+		float dragRatio = std::min(distance / dragDistance,1.0f);
+		Vector3 objectForce = objectDirection * (dragRatio * dragForce);
+		//heldObject->GetPhysicsObject()->ClearForces();
+		heldObject->GetPhysicsObject()->SetAwake();
+		heldObject->GetPhysicsObject()->AddForce(objectForce);
+
+		heldObject->GetPhysicsObject()->SetAngularVelocity(Vector3());
+
+		heldObject->GetTransform().SetOrientation(Quaternion::EulerAnglesToQuaternion(camera->GetPitch(),camera->GetYaw(),0));
+	}
+
+	void ObjectPickupComponent::OnObjectDrop() {
+		hasObject = false;
+		heldObject->GetPhysicsObject()->SetAwake();
+		heldObject->GetPhysicsObject()->SetPhysMat(physMatCache);
 	}
 }

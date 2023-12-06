@@ -277,6 +277,7 @@ void TutorialGame::InitWorld() {
 	BridgeConstraintTest();
 	testStateObject = AddStateObjectToWorld(Vector3(0, 10, 0));
 	AddPlayerToWorld(Vector3(0, 10, 0));
+	AddCubeToWorld(Vector3(0, 5, 7), Vector3(1, 1, 1), 0.02f);
 	//AddEnemyToWorld(Vector3(3, 10, 0));
 	//AddTestComponentObjectToWorld(Vector3(5, 5, 5));
 	world->StartWorld();
@@ -324,7 +325,7 @@ GameObject* TutorialGame::AddFloorToWorld(const Vector3& position) {
 		.SetPosition(position);
 
 	floor->SetRenderObject(new RenderObject(&floor->GetTransform(), cubeMesh, basicTex, basicShader));
-	floor->SetPhysicsObject(new PhysicsObject(&floor->GetTransform(), floor->GetBoundingVolume()));
+	floor->SetPhysicsObject(new PhysicsObject(&floor->GetTransform(), floor->GetBoundingVolume(),false));
 
 	PhysicsObject* fo = floor->GetPhysicsObject();
 	fo->SetInverseMass(0);
@@ -422,7 +423,7 @@ GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimens
 
 GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 	float meshSize		= 1.0f;
-	float inverseMass	= 0.9f;
+	float inverseMass	= 0.8f;
 
 	GameObject* character = new GameObject();
 	SphereVolume* volume  = new SphereVolume(1.0f);
@@ -451,7 +452,7 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 	FirstPersonInputComponent* fps = new FirstPersonInputComponent(&world->GetMainCamera());
 	PlayerInputComponent* pic = new PlayerInputComponent(character);
 
-	GameObject* pickupObject = AddSphereTriggerToWorld(Vector3(-1, 10, 0), 1);
+	GameObject* pickupObject = AddSphereTriggerToWorld(Vector3(-1, 10, 0), 0.6f);
 
 	TriggerComponent* tc = new TriggerComponent();
 
@@ -572,7 +573,7 @@ GameObject* TutorialGame::AddTestComponentObjectToWorld(const Vector3& position)
 }
 
 void TutorialGame::InitDefaultFloor() {
-	AddFloorToWorld(Vector3(0, -20, 0));
+	AddFloorToWorld(Vector3(0, -5, 0));
 }
 
 void TutorialGame::InitGameExamples() {
@@ -600,10 +601,10 @@ void TutorialGame::InitMixedGridWorld(int numRows, int numCols, float rowSpacing
 			Vector3 position = Vector3(x * colSpacing, 10.0f, z * rowSpacing);
 
 			if (rand() % 2) {
-				AddCubeToWorld(position, cubeDims);
+				AddCubeToWorld(position, cubeDims,0.7f);
 			}
 			else {
-				AddSphereToWorld(position, sphereRadius);
+				AddSphereToWorld(position, sphereRadius,0.7f);
 			}
 		}
 	}

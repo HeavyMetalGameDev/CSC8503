@@ -32,8 +32,8 @@ void GameWorld::InitPhysicsMaterials() {
 
 	PhysicsMaterial player;
 	player.e = 0.0f;
-	player.linearDampHorizontal = 3.0f;
-	player.angularDamp = 3.0f;
+	player.linearDampHorizontal = 8.0f;
+	player.angularDamp = 8.0f;
 	physicsMaterials["Player"] = player;
 }
 
