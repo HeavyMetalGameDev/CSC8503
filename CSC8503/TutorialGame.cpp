@@ -269,7 +269,7 @@ void TutorialGame::InitWorld() {
 	world->ClearAndErase();
 	physics->Clear();
 
-	InitMixedGridWorld(15, 15, 3.5f, 3.5f);
+	//InitMixedGridWorld(15, 15, 3.5f, 3.5f);
 
 	InitDefaultFloor();
 	//BridgeConstraintTest();
@@ -281,15 +281,15 @@ void TutorialGame::InitWorld() {
 
 
 	//------------ADD PICKUPS---------------------------------------------------------------------------------------------------------------------
-	AddPointPickupToWorld(Vector3(8, -2, 0),10);
-	AddPointPickupToWorld(Vector3(4, -2, 0), 10);
-	AddPointPickupToWorld(Vector3(5, -2, 4), 10);
-	AddPointPickupToWorld(Vector3(6, -2, 0), 10);
+	//AddPointPickupToWorld(Vector3(8, -2, 0),10);
+	//AddPointPickupToWorld(Vector3(4, -2, 0), 10);
+	//AddPointPickupToWorld(Vector3(5, -2, 4), 10);
+	//AddPointPickupToWorld(Vector3(6, -2, 0), 10);
 
-	AddKeyDoorPairToWorld(Vector3(6, -2, 6), Vector3(8, -2, 8), Debug::YELLOW);
-	AddKeyDoorPairToWorld(Vector3(12, -2, 12), Vector3(16, -2, 16), Debug::MAGENTA);
+	//AddKeyDoorPairToWorld(Vector3(6, -2, 6), Vector3(8, -2, 8), Debug::YELLOW);
+	//AddKeyDoorPairToWorld(Vector3(12, -2, 12), Vector3(16, -2, 16), Debug::MAGENTA);
 
-	AddCapsuleToWorld(Vector3(3, 10, 0), 1, 1,0.7f);
+	AddCapsuleToWorld(Vector3(3, 0, 0), 1,0.7f);
 	//AddTestComponentObjectToWorld(Vector3(5, 5, 5));
 	world->StartWorld();
 }
@@ -396,7 +396,7 @@ GameObject* TutorialGame::AddSphereTriggerToWorld(const Vector3& position, float
 		.SetScale(sphereSize)
 		.SetPosition(position);
 
-	//sphere->SetRenderObject(new RenderObject(&sphere->GetTransform(), sphereMesh, basicTex, basicShader));
+	sphere->SetRenderObject(new RenderObject(&sphere->GetTransform(), sphereMesh, basicTex, basicShader));
 	sphere->SetPhysicsObject(new PhysicsObject(&sphere->GetTransform(), sphere->GetBoundingVolume(),true,true,PICKUP_SPHERE_LAYER));
 
 	//PhysicsMaterial* spherePhys;
@@ -434,15 +434,15 @@ GameObject* TutorialGame::AddPointPickupToWorld(const Vector3& position, int poi
 	return sphere;
 }
 
-GameObject* TutorialGame::AddCapsuleToWorld(const Vector3& position, float radius, float halfHeight, float inverseMass) {
+GameObject* TutorialGame::AddCapsuleToWorld(const Vector3& position, float size, float inverseMass) {
 	GameObject* capsule = new GameObject();
 	capsule->SetTag("Capsule");
 
-	CapsuleVolume* volume = new CapsuleVolume(halfHeight,radius);
+	CapsuleVolume* volume = new CapsuleVolume(size*0.5f,size*0.5f);
 	capsule->SetBoundingVolume((CollisionVolume*)volume);
 
 	capsule->GetTransform()
-		.SetScale(Vector3(radius, radius, radius))
+		.SetScale(Vector3(size, size, size))
 		.SetPosition(position);
 
 	capsule->SetRenderObject(new RenderObject(&capsule->GetTransform(), capsuleMesh, basicTex, basicShader));

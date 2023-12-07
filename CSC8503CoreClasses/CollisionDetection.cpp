@@ -131,7 +131,46 @@ bool CollisionDetection::RaySphereIntersection(const Ray& r, const Transform& wo
 }
 
 bool CollisionDetection::RayCapsuleIntersection(const Ray& r, const Transform& worldTransform, const CapsuleVolume& volume, RayCollision& collision) {
-	return false;
+	
+	///////////NEED TO FIX
+	Vector3 capPos = worldTransform.GetPosition();
+	float capRadius = volume.GetRadius();
+	float capHalfHeight = volume.GetHalfHeight();
+	Quaternion capOrientation = worldTransform.GetOrientation().Normalised();
+	Matrix3 capTransform = Matrix3(capOrientation);
+	Vector3 capDirection = capTransform * Vector3(0, 1, 0);
+
+	Vector3 capMax = capPos + (capDirection * capHalfHeight);
+	Vector3 capMin = capPos - (capDirection * capHalfHeight);
+
+	Vector3 thirdPoint = capPos + (Vector3(0,0,-(r.GetDirection().x + r.GetDirection().y) / r.GetDirection().z));
+
+	Plane plane = Plane::PlaneFromTri(capMin, capMax, thirdPoint);
+
+	float ln = Vector3::Dot(plane.GetNormal(), r.GetDirection());
+	Vector3 planeRayDir = plane.GetPointOnPlane() - r.GetPosition();
+	float d = Vector3::Dot(planeRayDir, plane.GetNormal()) / ln;
+	Vector3 rayPoint = r.GetPosition() + (r.GetDirection() * d);
+
+	Vector3 rayToCapDir = rayPoint - capPos;
+	
+
+	float proj = Vector3::Dot(capDirection,rayToCapDir);
+
+	Vector3 capSpherePoint = capPos + (capDirection * proj);
+	if ((capSpherePoint - capPos).Length()> capHalfHeight)
+	{
+		if ((capSpherePoint - capMax).Length() > (capSpherePoint - capMin).Length())capSpherePoint = capMin;
+		else capSpherePoint = capMax;
+		
+	}
+	Debug::DrawLine(rayPoint, capSpherePoint);
+
+	Transform sphereTransform = Transform();
+	sphereTransform.SetPosition(capSpherePoint);
+	SphereVolume sphereVolume = SphereVolume(capRadius);
+
+	return RaySphereIntersection(r,sphereTransform,sphereVolume,collision);
 }
 
 bool CollisionDetection::ObjectIntersection(GameObject* a, GameObject* b, CollisionInfo& collisionInfo) {
@@ -345,7 +384,35 @@ bool CollisionDetection::AABBCapsuleIntersection(
 bool CollisionDetection::SphereCapsuleIntersection(
 	const CapsuleVolume& volumeA, const Transform& worldTransformA,
 	const SphereVolume& volumeB, const Transform& worldTransformB, CollisionInfo& collisionInfo) {
-	return false;
+
+	Vector3 capPos = worldTransformA.GetPosition();
+	float capRadius = volumeA.GetRadius();
+	float capHalfHeight = volumeA.GetHalfHeight();
+	Quaternion capOrientation = worldTransformA.GetOrientation().Normalised();
+	Matrix3 capTransform = Matrix3(capOrientation);
+	Vector3 capDirection = capTransform * Vector3(0, 1, 0);
+
+	Vector3 capMax = capPos + (capDirection * capHalfHeight);
+	Vector3 capMin = capPos - (capDirection * capHalfHeight);
+
+	Vector3 spherePos = worldTransformB.GetPosition();
+
+	Vector3 pointToSphere = spherePos - capMax;
+	Vector3 minToMax = capMin - capMax;
+	float pointToSphereLength = pointToSphere.Length();
+	float dot = Vector3::Dot(pointToSphere, minToMax);
+	float distance = dot / pointToSphereLength;
+
+	Vector3 closestPoint;
+	if (distance < 0)closestPoint = capMax;
+	else if (distance > 1)closestPoint = capMin;
+	else closestPoint = capMax + minToMax * distance;
+
+	Transform newSphereTransform = Transform();
+	newSphereTransform.SetPosition(closestPoint);
+	SphereVolume newSphereVolume = SphereVolume(capRadius);
+
+	return SphereIntersection(newSphereVolume,newSphereTransform,volumeB,worldTransformB,collisionInfo);
 }
 
 bool CollisionDetection::OBBIntersection(const OBBVolume& volumeA, const Transform& worldTransformA,

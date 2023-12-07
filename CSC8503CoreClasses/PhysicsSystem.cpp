@@ -286,6 +286,7 @@ void PhysicsSystem::ImpulseResolveCollision(GameObject& a, GameObject& b, Collis
 	physA->ApplyLinearImpulse(-fullImpulse);
 	physB->ApplyLinearImpulse(fullImpulse);
 
+
 	Vector3 aCross = Vector3::Cross(relativeA, -fullImpulse);
 	Vector3 bCross = Vector3::Cross(relativeB, fullImpulse);
 

@@ -66,7 +66,8 @@ namespace NCL::CSC8503 {
 
 		heldObject->GetPhysicsObject()->SetAngularVelocity(Vector3());
 
-		heldObject->GetTransform().SetOrientation(Quaternion::EulerAnglesToQuaternion(camera->GetPitch(),camera->GetYaw(),0));
+		if(heldObject->GetBoundingVolume()->type != VolumeType::AABB) //dont rotate AABBs
+			heldObject->GetTransform().SetOrientation(Quaternion::EulerAnglesToQuaternion(camera->GetPitch(), camera->GetYaw(), 0));
 	}
 
 	void ObjectPickupComponent::OnObjectDrop() {
