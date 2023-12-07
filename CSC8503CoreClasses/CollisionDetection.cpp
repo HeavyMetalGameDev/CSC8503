@@ -9,6 +9,7 @@
 
 using namespace NCL;
 
+
 bool CollisionDetection::RayPlaneIntersection(const Ray& r, const Plane& p, RayCollision& collisions) {
 	float ln = Vector3::Dot(p.GetNormal(), r.GetDirection());
 
@@ -164,7 +165,6 @@ bool CollisionDetection::RayCapsuleIntersection(const Ray& r, const Transform& w
 		else capSpherePoint = capMax;
 		
 	}
-	Debug::DrawLine(rayPoint, capSpherePoint);
 
 	Transform sphereTransform = Transform();
 	sphereTransform.SetPosition(capSpherePoint);
@@ -375,9 +375,59 @@ bool  CollisionDetection::OBBSphereIntersection(const OBBVolume& volumeA, const 
 	return collided;
 }
 
-bool CollisionDetection::AABBCapsuleIntersection(
+bool CollisionDetection::AABBCapsuleIntersection( //----------------------------------------------------fix this
 	const CapsuleVolume& volumeA, const Transform& worldTransformA,
 	const AABBVolume& volumeB, const Transform& worldTransformB, CollisionInfo& collisionInfo) {
+	Vector3 capPos = worldTransformA.GetPosition();
+	float capRadius = volumeA.GetRadius();
+	float capHalfHeight = volumeA.GetHalfHeight();
+	Quaternion capOrientation = worldTransformA.GetOrientation().Normalised();
+	Matrix3 capTransform = Matrix3(capOrientation);
+	Vector3 capDirection = capTransform * Vector3(0, 1, 0);
+
+	Vector3 capMax = capPos + (capDirection * capHalfHeight);
+	Vector3 capMin = capPos - (capDirection * capHalfHeight);
+
+	Vector3 cubePos = worldTransformB.GetPosition();
+	Vector3 cubeSize = volumeB.GetHalfDimensions();
+
+	Vector3 delta = capPos - cubePos;
+
+
+	Vector3 closestLocalPointOnBox = Maths::Vec3Clamp(delta, -cubeSize, cubeSize);
+	Vector3 closestPointOnBox = closestLocalPointOnBox + cubePos;
+	Vector3 deltaMinusPoint = delta - closestPointOnBox;
+
+	Vector3 capsuleToPoint = closestPointOnBox - capMax;
+	Vector3 minToMax = capMin - capMax;
+
+	
+
+	float capsuleToPointLength = capsuleToPoint.Length();
+	float dot = Vector3::Dot(capsuleToPoint, minToMax);
+	float distance = dot / capsuleToPointLength;
+
+	Vector3 closestPoint;
+	if (distance < 0)closestPoint = capMax;
+	else if (distance > 1)closestPoint = capMin;
+	else closestPoint = capMax + minToMax * distance;
+
+	Vector3 collisionDirection = (closestPointOnBox-closestPoint).Normalised();
+
+	Vector3 capsuleSpherePoint = closestPoint + (collisionDirection)*capRadius;
+
+	
+	if ((closestPointOnBox - closestPoint).Length() < capRadius) { 
+		float penetration = capRadius-(closestPointOnBox - closestPoint).Length(); //----------------FIX THIS-------------------------
+		std::cout << penetration << "\n";
+		Vector3 normal = { 0,-1,0 }; //--------------------------------------FIX THIS-------------------------
+		Debug::DrawLine(normal*100, normal*-100);
+		std::cout << normal << "\n";
+		collisionInfo.AddContactPoint(closestPointOnBox, capsuleSpherePoint,normal,penetration);
+		std::cout << "COLLISION\n";
+		return true;
+	}
+
 	return false;
 }
 
@@ -411,8 +461,7 @@ bool CollisionDetection::SphereCapsuleIntersection(
 	Transform newSphereTransform = Transform();
 	newSphereTransform.SetPosition(closestPoint);
 	SphereVolume newSphereVolume = SphereVolume(capRadius);
-
-	return SphereIntersection(newSphereVolume,newSphereTransform,volumeB,worldTransformB,collisionInfo);
+	return SphereIntersection(newSphereVolume, newSphereTransform, volumeB, worldTransformB, collisionInfo);
 }
 
 bool CollisionDetection::OBBIntersection(const OBBVolume& volumeA, const Transform& worldTransformA,
