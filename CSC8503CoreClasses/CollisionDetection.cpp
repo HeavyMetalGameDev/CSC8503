@@ -383,7 +383,7 @@ bool CollisionDetection::AABBCapsuleIntersection( //----------------------------
 	float capHalfHeight = volumeA.GetHalfHeight();
 	Quaternion capOrientation = worldTransformA.GetOrientation().Normalised();
 	Matrix3 capTransform = Matrix3(capOrientation);
-	Vector3 capDirection = capTransform * Vector3(0, 1, 0);
+	Vector3 capDirection = (capTransform * Vector3(0, 1, 0)).Normalised();
 
 	Vector3 capMax = capPos + (capDirection * capHalfHeight);
 	Vector3 capMin = capPos - (capDirection * capHalfHeight);
@@ -396,15 +396,15 @@ bool CollisionDetection::AABBCapsuleIntersection( //----------------------------
 
 	Vector3 closestLocalPointOnBox = Maths::Vec3Clamp(delta, -cubeSize, cubeSize);
 	Vector3 closestPointOnBox = closestLocalPointOnBox + cubePos;
-	Vector3 deltaMinusPoint = delta - closestPointOnBox;
 
-	Vector3 capsuleToPoint = closestPointOnBox - capMax;
-	Vector3 minToMax = capMin - capMax;
+	Vector3 capsuleToPoint = (closestPointOnBox - capMax);
+	Vector3 minToMax = (capMin - capMax);
 
 	
 
 	float capsuleToPointLength = capsuleToPoint.Length();
 	float dot = Vector3::Dot(capsuleToPoint, minToMax);
+
 	float distance = dot / capsuleToPointLength;
 
 	Vector3 closestPoint;
@@ -416,19 +416,24 @@ bool CollisionDetection::AABBCapsuleIntersection( //----------------------------
 
 	Vector3 capsuleSpherePoint = closestPoint + (collisionDirection)*capRadius;
 
+	Transform sphereTransform = Transform();
+	sphereTransform.SetPosition(closestPoint);
+	SphereVolume sphereVolume = SphereVolume(capRadius);
+	Debug::DrawLine(capsuleSpherePoint, closestPointOnBox);
+	return AABBSphereIntersection(volumeB, sphereTransform, sphereVolume, worldTransformB, collisionInfo);
 	
-	if ((closestPointOnBox - closestPoint).Length() < capRadius) { 
-		float penetration = capRadius-(closestPointOnBox - closestPoint).Length(); //----------------FIX THIS-------------------------
-		std::cout << penetration << "\n";
-		Vector3 normal = { 0,-1,0 }; //--------------------------------------FIX THIS-------------------------
-		Debug::DrawLine(normal*100, normal*-100);
-		std::cout << normal << "\n";
-		collisionInfo.AddContactPoint(closestPointOnBox, capsuleSpherePoint,normal,penetration);
-		std::cout << "COLLISION\n";
-		return true;
-	}
+	//if ((closestPointOnBox - closestPoint).Length() < capRadius) { 
+	//	float penetration = capRadius-(closestPointOnBox - closestPoint).Length(); //----------------FIX THIS-------------------------
+	//	std::cout << penetration << "\n";
+	//	Vector3 normal = -Vector3( 0,1,0 );//(capsuleSpherePoint - closestPointOnBox).Normalised(); //--------------------------------------FIX THIS-------------------------
+	//	
+	//	std::cout << normal << "\n";
+	//	collisionInfo.AddContactPoint(closestPointOnBox, capsuleSpherePoint,normal,penetration);
+	//	std::cout << "COLLISION\n";
+	//	return true;
+	//}
 
-	return false;
+	//return false;
 }
 
 bool CollisionDetection::SphereCapsuleIntersection(

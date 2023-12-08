@@ -16,7 +16,7 @@ using namespace NCL;
 using namespace CSC8503;
 
 PhysicsSystem::PhysicsSystem(GameWorld& g) : gameWorld(g) {
-	applyGravity = false;
+	applyGravity = true;
 	useBroadPhase = true;//can be changed
 	dTOffset = 0.0f;
 	globalDamping = 0.95f;
@@ -283,15 +283,21 @@ void PhysicsSystem::ImpulseResolveCollision(GameObject& a, GameObject& b, Collis
 	float j = (-(1.0f + cRestitution) * impulseForce) / (totalMass + angularEffect);
 	Vector3 fullImpulse = p.normal * j;
 
+	Vector3 normVelocityCrossA = Vector3::Cross(p.normal, contactVelocity) * physA->GetInverseMass();
+	Vector3 normVelocityCrossB = Vector3::Cross(p.normal, contactVelocity) * physB->GetInverseMass();
+
+	normVelocityCrossA.Normalise();
+	normVelocityCrossB.Normalise();
+
 	physA->ApplyLinearImpulse(-fullImpulse);
 	physB->ApplyLinearImpulse(fullImpulse);
 
 
-	Vector3 aCross = Vector3::Cross(relativeA, -fullImpulse);
-	Vector3 bCross = Vector3::Cross(relativeB, fullImpulse);
+	Vector3 aCross = Vector3::Cross(p.normal, -fullImpulse);
+	Vector3 bCross = Vector3::Cross(p.normal, fullImpulse);
 
-	physA->ApplyAngularImpulse(aCross);
-	physB->ApplyAngularImpulse(bCross);
+	//physA->ApplyAngularImpulse(normVelocityCrossA);
+	//physB->ApplyAngularImpulse(normVelocityCrossB);
 
 	if (physA->GetAngularVelocity().Length() + physA->GetLinearVelocity().Length() < 0.6f)physA->SetSleeping();
 	if (physB->GetAngularVelocity().Length() + physB->GetLinearVelocity().Length() < 0.6f)physB->SetSleeping();

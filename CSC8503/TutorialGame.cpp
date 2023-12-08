@@ -275,9 +275,10 @@ void TutorialGame::InitWorld() {
 	//BridgeConstraintTest();
 	//testStateObject = AddStateObjectToWorld(Vector3(0, 10, 0));
 	AddPlayerToWorld(Vector3(0, 5, 0));
-	//AddCubeToWorld(Vector3(1, 0, 0), Vector3(.5f, .5f, .5f), 0.7f);
+	AddCubeToWorld(Vector3(1, 0, 0), Vector3(.5f, .5f, .5f), 0.7f);
 	//AddEnemyToWorld(Vector3(3, 10, 0));
-	//AddSphereToWorld(Vector3(4, 10, 0), 1, 0.7f);
+	AddSphereToWorld(Vector3(4, 0, 0), 0.5f, 0.7f);
+	AddSphereToWorld(Vector3(5, 0, 0), 0.5f, 0.7f);
 
 
 	//------------ADD PICKUPS---------------------------------------------------------------------------------------------------------------------
@@ -289,7 +290,7 @@ void TutorialGame::InitWorld() {
 	//AddKeyDoorPairToWorld(Vector3(6, -2, 6), Vector3(8, -2, 8), Debug::YELLOW);
 	//AddKeyDoorPairToWorld(Vector3(12, -2, 12), Vector3(16, -2, 16), Debug::MAGENTA);
 
-	AddCapsuleToWorld(Vector3(3, 0, 0), 1,0.7f);
+	AddCapsuleToWorld(Vector3(3, 5, 0), 1,0.7f);
 	//AddSphereToWorld(Vector3(1, 0, 0), .3f, 0.7f);
 	//AddTestComponentObjectToWorld(Vector3(5, 5, 5));
 	world->StartWorld();
@@ -454,7 +455,7 @@ GameObject* TutorialGame::AddCapsuleToWorld(const Vector3& position, float size,
 	co->InitSphereInertia();
 
 	PhysicsMaterial* capPhys;
-	if (world->TryGetPhysMat("Bouncy", capPhys))co->SetPhysMat(capPhys);
+	if (world->TryGetPhysMat("Standard", capPhys))co->SetPhysMat(capPhys);
 
 	world->AddGameObject(capsule);
 
