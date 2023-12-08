@@ -78,6 +78,8 @@ set(Components
     "PointPickupComponent.h"
     "SimpleChaseComponent.cpp"
     "SimpleChaseComponent.h"
+    "StateMachineMovementComponent.cpp"
+    "StateMachineMovementComponent.h"
     "TriggerComponent.cpp"
     "TriggerComponent.h"
 )
