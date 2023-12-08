@@ -57,6 +57,32 @@ set(Collision_Detection
 )
 source_group("Collision Detection" FILES ${Collision_Detection})
 
+set(Components
+    "Component.cpp"
+    "Component.h"
+    "FirstPersonInputComponent.cpp"
+    "FirstPersonInputComponent.h"
+    "KeyComponent.cpp"
+    "KeyComponent.h"
+    "MovementApplierComponent.cpp"
+    "MovementApplierComponent.h"
+    "MovementInput.cpp"
+    "MovementInput.h"
+    "ObjectPickupComponent.cpp"
+    "ObjectPickupComponent.h"
+    "PlayerInputComponent.cpp"
+    "PlayerInputComponent.h"
+    "PlayerValuesComponent.cpp"
+    "PlayerValuesComponent.h"
+    "PointPickupComponent.cpp"
+    "PointPickupComponent.h"
+    "SimpleChaseComponent.cpp"
+    "SimpleChaseComponent.h"
+    "TriggerComponent.cpp"
+    "TriggerComponent.h"
+)
+source_group("Components" FILES ${Components})
+
 set(Networking
     "GameClient.h"  
     "GameClient.cpp"
@@ -82,6 +108,7 @@ set(Physics
     "PhysicsObject.h"
     "PhysicsSystem.cpp"
     "PhysicsSystem.h"
+    "PhysicsMaterial.h"
 )
 source_group("Physics" FILES ${Physics})
 
@@ -133,6 +160,7 @@ set(ALL_FILES
     ${AI_State_Machine}
     ${AI_Pathfinding}
     ${Collision_Detection}
+    ${Components}
     ${Networking}
     ${Physics}
     ${enet_Files}   
