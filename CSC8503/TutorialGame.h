@@ -50,6 +50,7 @@ namespace NCL {
 			GameObject* AddPointPickupToWorld(const Vector3& position, int points);
 			GameObject* AddSphereTriggerToWorld(const Vector3& position, float radius);
 			GameObject* AddCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass = 10.0f);
+			GameObject* AddOBBCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass = 10.0f);
 			GameObject* AddWallToWorld(const Vector3& position, Vector3 dimensions);
 
 			GameObject* AddPlayerToWorld(const Vector3& position);

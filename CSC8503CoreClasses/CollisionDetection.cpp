@@ -245,6 +245,15 @@ bool CollisionDetection::ObjectIntersection(GameObject* a, GameObject* b, Collis
 		return AABBCapsuleIntersection((CapsuleVolume&)*volB, transformB, (AABBVolume&)*volA, transformA, collisionInfo);
 	}
 
+	if (volA->type == VolumeType::Capsule && volB->type == VolumeType::OBB) {
+		return OBBCapsuleIntersection((CapsuleVolume&)*volA, transformA, (OBBVolume&)*volB, transformB, collisionInfo);
+	}
+	if (volB->type == VolumeType::Capsule && volA->type == VolumeType::OBB) {
+		collisionInfo.a = b;
+		collisionInfo.b = a;
+		return OBBCapsuleIntersection((CapsuleVolume&)*volB, transformB, (OBBVolume&)*volA, transformA, collisionInfo);
+	}
+
 	return false;
 }
 
@@ -353,7 +362,7 @@ bool CollisionDetection::AABBSphereIntersection(const AABBVolume& volumeA, const
 	return false;
 }
 
-bool  CollisionDetection::OBBSphereIntersection(const OBBVolume& volumeA, const Transform& worldTransformA, //TODO
+bool  CollisionDetection::OBBSphereIntersection(const OBBVolume& volumeA, const Transform& worldTransformA,
 	const SphereVolume& volumeB, const Transform& worldTransformB, CollisionInfo& collisionInfo) {
 	Vector3 boxSize = volumeA.GetHalfDimensions();
 	Vector3 delta = worldTransformB.GetPosition() - worldTransformA.GetPosition();
@@ -435,6 +444,32 @@ bool CollisionDetection::AABBCapsuleIntersection( //----------------------------
 	//return false;
 }
 
+bool CollisionDetection::OBBCapsuleIntersection( //----------------------------------------------------fix this
+	const CapsuleVolume& volumeA, const Transform& worldTransformA,
+	const OBBVolume& volumeB, const Transform& worldTransformB, CollisionInfo& collisionInfo) {
+	Vector3 boxSize = volumeB.GetHalfDimensions();
+	Vector3 delta = worldTransformB.GetPosition() - worldTransformA.GetPosition();
+
+	Quaternion orientation = worldTransformA.GetOrientation();
+	Matrix3 transform = Matrix3(orientation);
+	Matrix3 invTransform = Matrix3(orientation.Conjugate());
+
+	Vector3 localCapPosition = worldTransformB.GetPosition() - worldTransformA.GetPosition();
+	Transform localCapTransform;
+	localCapTransform.SetPosition((invTransform * localCapPosition) + worldTransformB.GetPosition());
+	Vector3 toEuler =invTransform * localCapTransform.GetOrientation().ToEuler();
+	localCapTransform.SetOrientation(Quaternion::EulerAnglesToQuaternion(toEuler.x,toEuler.y,toEuler.z));
+	Debug::DrawLine(worldTransformB.GetPosition(), localCapPosition + worldTransformB.GetPosition());
+	AABBVolume aabb = AABBVolume(volumeB.GetHalfDimensions());
+	bool collided = AABBCapsuleIntersection(volumeA, localCapTransform, aabb, worldTransformB, collisionInfo);
+	if (collided) {
+		collisionInfo.point.localA = transform * collisionInfo.point.localB;
+		collisionInfo.point.localB = transform * -collisionInfo.point.localA;
+		collisionInfo.point.normal = transform * -collisionInfo.point.normal;
+	}
+	return collided;
+}
+
 bool CollisionDetection::SphereCapsuleIntersection(
 	const CapsuleVolume& volumeA, const Transform& worldTransformA,
 	const SphereVolume& volumeB, const Transform& worldTransformB, CollisionInfo& collisionInfo) {
@@ -451,7 +486,10 @@ bool CollisionDetection::SphereCapsuleIntersection(
 
 	Vector3 spherePos = worldTransformB.GetPosition();
 
-	Vector3 pointToSphere = spherePos - capMax;
+	Vector3 clampSphere = Maths::Vec3Clamp(spherePos, capMin, capMax);
+
+	//Debug::DrawLine(clampSphere, spherePos);
+	/*Vector3 pointToSphere = spherePos - capMax;
 	Vector3 minToMax = capMin - capMax;
 	float pointToSphereLength = pointToSphere.Length();
 	float dot = Vector3::Dot(pointToSphere, minToMax);
@@ -460,10 +498,10 @@ bool CollisionDetection::SphereCapsuleIntersection(
 	Vector3 closestPoint;
 	if (distance < 0)closestPoint = capMax;
 	else if (distance > 1)closestPoint = capMin;
-	else closestPoint = capMax + minToMax * distance;
+	else closestPoint = capMax + minToMax * distance;*/
 
 	Transform newSphereTransform = Transform();
-	newSphereTransform.SetPosition(closestPoint);
+	newSphereTransform.SetPosition(clampSphere);
 	SphereVolume newSphereVolume = SphereVolume(capRadius);
 	return SphereIntersection(newSphereVolume, newSphereTransform, volumeB, worldTransformB, collisionInfo);
 }

@@ -138,8 +138,6 @@ void TutorialGame::UpdateGame(float dt) {
 
 	Debug::DrawLine(Vector3(), Vector3(0, 100, 0), Vector4(1, 0, 0, 1));
 
-	SelectObject();
-	MoveSelectedObject();
 
 	world->UpdateWorld(dt);
 	renderer->Update(dt);
@@ -271,29 +269,21 @@ void TutorialGame::InitWorld() {
 	world->ClearAndErase();
 	physics->Clear();
 
-	//InitMixedGridWorld(15, 15, 3.5f, 3.5f);
-
+	InitMixedGridWorld(15, 15, 3.5f, 3.5f);
+	CreateStaticLevel();
 	InitDefaultFloor();
 	//BridgeConstraintTest();
 	//testStateObject = AddStateObjectToWorld(Vector3(0, 10, 0));
+	
+	//STARTING ROOM--------------------------------------------------------------
 	AddPlayerToWorld(Vector3(80, 0, 10));
-	AddCubeToWorld(Vector3(-2, 0, 0), Vector3(.5f, .5f, .5f), 0.7f);
-	//AddEnemyToWorld(Vector3(3, 10, 0));
-	AddSphereToWorld(Vector3(4, 0, 0), 0.5f, 0.7f);
-	AddSphereToWorld(Vector3(5, 0, 0), 0.5f, 0.7f);
-
-
-	//------------ADD PICKUPS---------------------------------------------------------------------------------------------------------------------
-	//AddPointPickupToWorld(Vector3(8, -2, 0),10);
-	//AddPointPickupToWorld(Vector3(4, -2, 0), 10);
-	//AddPointPickupToWorld(Vector3(5, -2, 4), 10);
-	//AddPointPickupToWorld(Vector3(6, -2, 0), 10);
-
-	AddKeyDoorPairToWorld(Vector3(50, 0, 10), Vector3(10, 0, 20), Debug::YELLOW);
-	//AddKeyDoorPairToWorld(Vector3(12, -2, 12), Vector3(16, -2, 16), Debug::MAGENTA);
-	CreateStaticLevel();
-	AddCapsuleToWorld(Vector3(3, 5, 0), 1,0.7f);
-	//AddSphereToWorld(Vector3(1, 0, 0), .3f, 0.7f);
+	//AddOBBCubeToWorld(Vector3(70, -5, 10),Vector3(1,1,1));
+	AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1),0);
+	AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f);
+	AddKeyDoorPairToWorld(Vector3(70, 3.5f, 10), Vector3(10, 0, 20), Debug::YELLOW);
+	
+	AddCapsuleToWorld(Vector3(80, 0, 10), 1,0.7f);
+	AddSphereToWorld(Vector3(1, 0, 0), .3f, 0.7f);
 	//AddTestComponentObjectToWorld(Vector3(5, 5, 5));
 	world->StartWorld();
 }
@@ -424,7 +414,7 @@ GameObject* TutorialGame::AddPointPickupToWorld(const Vector3& position, int poi
 		.SetPosition(position);
 
 	sphere->SetRenderObject(new RenderObject(&sphere->GetTransform(), sphereMesh, basicTex, basicShader));
-	sphere->SetPhysicsObject(new PhysicsObject(&sphere->GetTransform(), sphere->GetBoundingVolume(), true, true,STATIC_LAYER));
+	sphere->SetPhysicsObject(new PhysicsObject(&sphere->GetTransform(), sphere->GetBoundingVolume(), false, true,STATIC_LAYER));
 	sphere->GetRenderObject()->SetColour(Debug::BLUE);
 
 	PointPickupComponent* ppc = new PointPickupComponent(world,sphere, points);
@@ -474,11 +464,43 @@ GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimens
 		.SetPosition(position)
 		.SetScale(dimensions * 2);
 
+
 	cube->SetRenderObject(new RenderObject(&cube->GetTransform(), cubeMesh, basicTex, basicShader));
-	cube->SetPhysicsObject(new PhysicsObject(&cube->GetTransform(), cube->GetBoundingVolume()));
+	if (inverseMass == 0) {
+		cube->SetPhysicsObject(new PhysicsObject(&cube->GetTransform(), cube->GetBoundingVolume(), false, false, STATIC_LAYER));
+	}
+	else {
+		cube->SetPhysicsObject(new PhysicsObject(&cube->GetTransform(), cube->GetBoundingVolume()));
+	}
 
 	PhysicsObject* co = cube->GetPhysicsObject();
+
+	co->InitCubeInertia();
 	co->SetInverseMass(inverseMass);
+
+	PhysicsMaterial* cubePhys;
+	if (world->TryGetPhysMat("Standard", cubePhys))co->SetPhysMat(cubePhys);
+
+	world->AddGameObject(cube);
+
+	return cube;
+}
+GameObject* TutorialGame::AddOBBCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass) {
+	GameObject* cube = new GameObject();
+
+	OBBVolume* volume = new OBBVolume(dimensions);
+	cube->SetBoundingVolume((CollisionVolume*)volume);
+
+	cube->GetTransform()
+		.SetPosition(position)
+		.SetScale(dimensions * 2)
+		.SetOrientation(Quaternion::EulerAnglesToQuaternion(30,0,0));
+
+	cube->SetRenderObject(new RenderObject(&cube->GetTransform(), cubeMesh, basicTex, basicShader));
+	cube->SetPhysicsObject(new PhysicsObject(&cube->GetTransform(), cube->GetBoundingVolume(),false,false,STATIC_LAYER));
+
+	PhysicsObject* co = cube->GetPhysicsObject();
+	co->SetInverseMass(0);
 	co->InitCubeInertia();
 
 	PhysicsMaterial* cubePhys;
@@ -680,7 +702,7 @@ StateGameObject* TutorialGame::AddStateObjectToWorld(const Vector3& position) {
 
 
 void TutorialGame::InitDefaultFloor() {
-	AddFloorToWorld(Vector3(0, -7, 0));
+	AddFloorToWorld(Vector3(0, -7, 0)); 
 }
 
 void TutorialGame::InitSphereGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing, float radius) {
@@ -740,7 +762,6 @@ bool TutorialGame::SelectObject() {
 		}
 	}
 	if (inSelectionMode) {
-		Debug::Print("Press Q to change to camera mode!", Vector2(5, 85));
 
 		if (Window::GetMouse()->ButtonDown(NCL::MouseButtons::Left)) {
 			if (selectionObject) {	//set colour to deselected;
@@ -760,19 +781,6 @@ bool TutorialGame::SelectObject() {
 				return false;
 			}
 		}
-		if (Window::GetKeyboard()->KeyPressed(NCL::KeyCodes::L)) {
-			if (selectionObject) {
-				if (lockedObject == selectionObject) {
-					lockedObject = nullptr;
-				}
-				else {
-					lockedObject = selectionObject;
-				}
-			}
-		}
-	}
-	else {
-		Debug::Print("Press Q to change to select mode!", Vector2(5, 85));
 	}
 	return false;
 }
@@ -785,7 +793,6 @@ line - after the third, they'll be able to twist under torque aswell.
 */
 
 void TutorialGame::MoveSelectedObject() {
-	Debug::Print("Click Force:" + std::to_string(forceMagnitude), Vector2(5, 90));
 	forceMagnitude += Window::GetMouse()->GetWheelMovement() * 100.0f;
 
 	if (!selectionObject) {
@@ -818,11 +825,15 @@ void TutorialGame::CreateStaticLevel() {
 			infile >> type;
 			if (type == 'r') { //roof
 				AddWallToWorld(Vector3((float)(x * nodeSize), nodeSize * 1, (float)(y * nodeSize)), Vector3(nodeSize, nodeSize, nodeSize) * 0.5f);
+				AddPointPickupToWorld(Vector3((float)(x * nodeSize), -3, (float)(y * nodeSize)), 10);
 			}
 			else if (type != '.') {
 				int intType = type - '0';
 				for(int i=0;i<intType;i++)
 				AddWallToWorld(Vector3((float)(x * nodeSize), nodeSize*i, (float)(y * nodeSize)), Vector3(nodeSize, nodeSize, nodeSize) * 0.5f);
+			}
+			else {
+				AddPointPickupToWorld(Vector3((float)(x * nodeSize), -3, (float)(y * nodeSize)),10);
 			}
 			//if (type == 'x')AddCubeToWorld(Vector3(x, 0, y), Vector3(1,1,1));
 		}
