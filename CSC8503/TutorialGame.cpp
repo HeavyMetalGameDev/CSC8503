@@ -12,10 +12,12 @@
 #include "PointPickupComponent.h"
 #include "PlayerValuesComponent.h"
 #include "KeyComponent.h"
+#include "Assets.h"
 
 #include "PositionConstraint.h"
 #include "OrientationConstraint.h"
 #include "StateGameObject.h"
+#include <fstream>
 
 
 
@@ -274,8 +276,8 @@ void TutorialGame::InitWorld() {
 	InitDefaultFloor();
 	//BridgeConstraintTest();
 	//testStateObject = AddStateObjectToWorld(Vector3(0, 10, 0));
-	AddPlayerToWorld(Vector3(0, 5, 0));
-	AddCubeToWorld(Vector3(1, 0, 0), Vector3(.5f, .5f, .5f), 0.7f);
+	AddPlayerToWorld(Vector3(80, 0, 10));
+	AddCubeToWorld(Vector3(-2, 0, 0), Vector3(.5f, .5f, .5f), 0.7f);
 	//AddEnemyToWorld(Vector3(3, 10, 0));
 	AddSphereToWorld(Vector3(4, 0, 0), 0.5f, 0.7f);
 	AddSphereToWorld(Vector3(5, 0, 0), 0.5f, 0.7f);
@@ -287,9 +289,9 @@ void TutorialGame::InitWorld() {
 	//AddPointPickupToWorld(Vector3(5, -2, 4), 10);
 	//AddPointPickupToWorld(Vector3(6, -2, 0), 10);
 
-	//AddKeyDoorPairToWorld(Vector3(6, -2, 6), Vector3(8, -2, 8), Debug::YELLOW);
+	AddKeyDoorPairToWorld(Vector3(50, 0, 10), Vector3(10, 0, 20), Debug::YELLOW);
 	//AddKeyDoorPairToWorld(Vector3(12, -2, 12), Vector3(16, -2, 16), Debug::MAGENTA);
-
+	CreateStaticLevel();
 	AddCapsuleToWorld(Vector3(3, 5, 0), 1,0.7f);
 	//AddSphereToWorld(Vector3(1, 0, 0), .3f, 0.7f);
 	//AddTestComponentObjectToWorld(Vector3(5, 5, 5));
@@ -486,6 +488,31 @@ GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimens
 
 	return cube;
 }
+GameObject* TutorialGame::AddWallToWorld(const Vector3& position, Vector3 dimensions) {
+	GameObject* cube = new GameObject();
+
+	AABBVolume* volume = new AABBVolume(dimensions);
+	cube->SetBoundingVolume((CollisionVolume*)volume);
+
+	cube->GetTransform()
+		.SetPosition(position)
+		.SetScale(dimensions * 2);
+
+	cube->SetRenderObject(new RenderObject(&cube->GetTransform(), cubeMesh, basicTex, basicShader));
+	cube->SetPhysicsObject(new PhysicsObject(&cube->GetTransform(), cube->GetBoundingVolume(),false));
+
+	PhysicsObject* co = cube->GetPhysicsObject();
+	co->SetInverseMass(0);
+	co->InitCubeInertia();
+	co->SetCollisionLayer(STATIC_LAYER);
+
+	PhysicsMaterial* cubePhys;
+	if (world->TryGetPhysMat("Standard", cubePhys))co->SetPhysMat(cubePhys);
+
+	world->AddGameObject(cube);
+
+	return cube;
+}
 
 GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 	float meshSize		= 1.0f;
@@ -508,7 +535,9 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 	co->InitSphereInertia();
 
 	PhysicsMaterial* playerPhys;
+	PhysicsMaterial* bouncyPhys;
 	if (world->TryGetPhysMat("Player", playerPhys))co->SetPhysMat(playerPhys);
+	world->TryGetPhysMat("Bouncy", bouncyPhys);
 
 
 	character->SetCamera(&world->GetMainCamera());
@@ -516,7 +545,7 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 
 	MovementApplierComponent* ma = new MovementApplierComponent(&character->GetTransform(), character->GetPhysicsObject(),7000.0f);
 	FirstPersonInputComponent* fps = new FirstPersonInputComponent(&world->GetMainCamera());
-	PlayerInputComponent* pic = new PlayerInputComponent(character);
+	PlayerInputComponent* pic = new PlayerInputComponent(character, &world->GetMainCamera());
 	PlayerValuesComponent* pvc = new PlayerValuesComponent();
 
 	GameObject* pickupObject = AddSphereTriggerToWorld(Vector3(-1, 10, 0), 0.6f);
@@ -578,7 +607,7 @@ GameObject* TutorialGame::AddKeyDoorPairToWorld(const Vector3& keyPosition, cons
 	GameObject* key = new GameObject();
 	GameObject* door = new GameObject();
 	Vector3 keyScale(0.2f, 0.2f, 0.3f);
-	Vector3 doorScale(2.0f, 2.0f, 0.5f);
+	Vector3 doorScale(5, 5,5);
 
 	AABBVolume* keyVolume = new AABBVolume(keyScale);
 	key->SetBoundingVolume((CollisionVolume*)keyVolume);
@@ -773,6 +802,32 @@ void TutorialGame::MoveSelectedObject() {
 			}
 		}
 	}
+}
+
+void TutorialGame::CreateStaticLevel() {
+	std::ifstream infile(Assets::DATADIR + "TestGrid1.txt");
+	int nodeSize;
+	int gridWidth;
+	int gridHeight;
+	infile >> nodeSize;
+	infile >> gridWidth;
+	infile >> gridHeight;
+	for (int y = 0; y < gridHeight; ++y) {
+		for (int x = 0; x < gridWidth; ++x) {
+			char type = 0;
+			infile >> type;
+			if (type == 'r') { //roof
+				AddWallToWorld(Vector3((float)(x * nodeSize), nodeSize * 1, (float)(y * nodeSize)), Vector3(nodeSize, nodeSize, nodeSize) * 0.5f);
+			}
+			else if (type != '.') {
+				int intType = type - '0';
+				for(int i=0;i<intType;i++)
+				AddWallToWorld(Vector3((float)(x * nodeSize), nodeSize*i, (float)(y * nodeSize)), Vector3(nodeSize, nodeSize, nodeSize) * 0.5f);
+			}
+			//if (type == 'x')AddCubeToWorld(Vector3(x, 0, y), Vector3(1,1,1));
+		}
+	}
+	infile.close();
 }
 
 

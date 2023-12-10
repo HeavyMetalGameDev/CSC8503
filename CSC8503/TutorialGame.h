@@ -50,10 +50,13 @@ namespace NCL {
 			GameObject* AddPointPickupToWorld(const Vector3& position, int points);
 			GameObject* AddSphereTriggerToWorld(const Vector3& position, float radius);
 			GameObject* AddCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass = 10.0f);
+			GameObject* AddWallToWorld(const Vector3& position, Vector3 dimensions);
 
 			GameObject* AddPlayerToWorld(const Vector3& position);
 			GameObject* AddEnemyToWorld(const Vector3& position);
 			GameObject* AddKeyDoorPairToWorld(const Vector3& keyPosition,const Vector3& doorPosition, const Vector4& colour);
+
+			void CreateStaticLevel();
 
 			StateGameObject* AddStateObjectToWorld(const Vector3& position);
 			StateGameObject* testStateObject;

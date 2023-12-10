@@ -42,6 +42,9 @@ namespace NCL::CSC8503 {
 		Transform& GetTransform() {
 			return transform;
 		}
+		Camera* GetCamera() {
+			return attachedCamera;
+		}
 
 		RenderObject* GetRenderObject() const {
 			return renderObject;

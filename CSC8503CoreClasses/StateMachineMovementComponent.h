@@ -6,6 +6,8 @@ namespace NCL::CSC8503 {
 	class StateMachineMovementComponent : public MovementInput
 	{
 	public:
+		StateMachineMovementComponent(GameWorld* gw, GameObject* gameObject);
+
 	protected:
 		StateMachine stateMachine;
 	};

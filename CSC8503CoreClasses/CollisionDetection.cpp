@@ -419,7 +419,6 @@ bool CollisionDetection::AABBCapsuleIntersection( //----------------------------
 	Transform sphereTransform = Transform();
 	sphereTransform.SetPosition(closestPoint);
 	SphereVolume sphereVolume = SphereVolume(capRadius);
-	Debug::DrawLine(capsuleSpherePoint, closestPointOnBox);
 	return AABBSphereIntersection(volumeB, sphereTransform, sphereVolume, worldTransformB, collisionInfo);
 	
 	//if ((closestPointOnBox - closestPoint).Length() < capRadius) { 
