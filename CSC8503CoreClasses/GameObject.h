@@ -31,7 +31,7 @@ namespace NCL::CSC8503 {
 			return isActive;
 		}
 
-		virtual void Update(float dt) { UpdateAllComponents(dt); if (attachedCamera)attachedCamera->SetPosition(transform.GetPosition()); }
+		virtual void Update(float dt) { UpdateAllComponents(dt); if (attachedCamera)attachedCamera->SetPosition(transform.GetPosition() + Vector3(0,0.3f,0)); }
 		virtual void PhysicsUpdate(float dt) { PhysicsUpdateAllComponents(dt);}
 		virtual void Start(GameWorld* gw) { StartAllComponents(gw); }
 

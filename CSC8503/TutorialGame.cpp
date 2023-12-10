@@ -492,7 +492,7 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 	float inverseMass	= 0.8f;
 
 	GameObject* character = new GameObject();
-	SphereVolume* volume  = new SphereVolume(1.0f);
+	CapsuleVolume* volume  = new CapsuleVolume(1.0f,0.5f);
 
 	character->SetBoundingVolume((CollisionVolume*)volume);
 
@@ -500,7 +500,7 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 		.SetScale(Vector3(meshSize, meshSize, meshSize))
 		.SetPosition(position);
 
-	//character->SetRenderObject(new RenderObject(&character->GetTransform(), charMesh, nullptr, basicShader));
+	character->SetRenderObject(new RenderObject(&character->GetTransform(), capsuleMesh, nullptr, basicShader));
 	character->SetPhysicsObject(new PhysicsObject(&character->GetTransform(), character->GetBoundingVolume(),true,false,PLAYER_LAYER));
 
 	PhysicsObject* co = character->GetPhysicsObject();
