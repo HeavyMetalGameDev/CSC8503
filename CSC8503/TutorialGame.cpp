@@ -680,7 +680,7 @@ StateGameObject* TutorialGame::AddStateObjectToWorld(const Vector3& position) {
 
 
 void TutorialGame::InitDefaultFloor() {
-	AddFloorToWorld(Vector3(0, -5, 0));
+	AddFloorToWorld(Vector3(0, -7, 0));
 }
 
 void TutorialGame::InitSphereGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing, float radius) {

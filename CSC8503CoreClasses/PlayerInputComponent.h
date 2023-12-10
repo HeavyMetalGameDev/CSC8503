@@ -12,12 +12,14 @@ namespace NCL::CSC8503 {
         virtual void Update(float dt) override;
         virtual void PhysicsUpdate(float dt) override;
         void SetJumpPower(float jp) { jumpPower = jp; }
+        void UnlockGrapple() { hasUnlockedGrapple = true; }
 
     protected:
         Camera* camera;
         bool hasJumped=false;
         bool isGrappling = false;
         bool isGrapplingStatic = false;
+        bool hasUnlockedGrapple = false;
         float jumpPower = 15;
         GameWorld* worldRef;
         PhysicsObject* physObject;

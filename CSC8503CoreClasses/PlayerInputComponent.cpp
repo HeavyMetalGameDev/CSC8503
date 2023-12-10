@@ -56,9 +56,14 @@ namespace NCL::CSC8503{
 		if (isGrappling) {
 			if (isGrapplingStatic) {
 				Debug::DrawLine(gameObject->GetTransform().GetPosition(), staticGrapplePoint);
-				Vector3 forceDirection = staticGrapplePoint - gameObject->GetTransform().GetPosition();
-				forceDirection.Normalise();
-				physObject->AddForce(forceDirection* 200.0f);
+				if (hasUnlockedGrapple) {
+					Vector3 forceDirection = staticGrapplePoint - gameObject->GetTransform().GetPosition();
+					forceDirection.Normalise();
+					physObject->AddForce(forceDirection * 200.0f);
+				}
+				else {
+					Debug::Print("Grapple Not Strong Enough!", { 30,80 });
+				}
 			}
 			else {
 				Debug::DrawLine(grappledObject->GetTransform().GetPosition(), gameObject->GetTransform().GetPosition());
