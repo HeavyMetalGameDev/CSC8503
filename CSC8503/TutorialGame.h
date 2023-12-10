@@ -10,6 +10,27 @@
 #include "StateGameObject.h"
 #include "TestComponent.h"
 
+#include "GameWorld.h"
+#include "PhysicsObject.h"
+#include "RenderObject.h"
+#include "TextureLoader.h"
+#include "MovementApplierComponent.h"
+#include "FirstPersonInputComponent.h"
+#include "SimpleChaseComponent.h"
+#include "PlayerInputComponent.h"
+#include "ObjectPickupComponent.h"
+#include "TriggerComponent.h"
+#include "PointPickupComponent.h"
+#include "PlayerValuesComponent.h"
+#include "StateMachineEnemyComponent.h"
+#include "KeyComponent.h"
+#include "Assets.h"
+
+#include "PositionConstraint.h"
+#include "OrientationConstraint.h"
+#include "StateGameObject.h"
+#include <fstream>
+
 namespace NCL {
 	namespace CSC8503 {
 		class TutorialGame		{
@@ -54,7 +75,7 @@ namespace NCL {
 			GameObject* AddWallToWorld(const Vector3& position, Vector3 dimensions);
 
 			GameObject* AddPlayerToWorld(const Vector3& position);
-			GameObject* AddEnemyToWorld(const Vector3& position);
+			GameObject* AddEnemyToWorld(const Vector3& position, std::vector<Vector3>& patrolPoints);
 			GameObject* AddKeyDoorPairToWorld(const Vector3& keyPosition,const Vector3& doorPosition, const Vector4& colour);
 
 			void CreateStaticLevel();

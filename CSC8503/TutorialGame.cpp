@@ -1,25 +1,6 @@
+
+
 #include "TutorialGame.h"
-#include "GameWorld.h"
-#include "PhysicsObject.h"
-#include "RenderObject.h"
-#include "TextureLoader.h"
-#include "MovementApplierComponent.h"
-#include "FirstPersonInputComponent.h"
-#include "SimpleChaseComponent.h"
-#include "PlayerInputComponent.h"
-#include "ObjectPickupComponent.h"
-#include "TriggerComponent.h"
-#include "PointPickupComponent.h"
-#include "PlayerValuesComponent.h"
-#include "KeyComponent.h"
-#include "Assets.h"
-
-#include "PositionConstraint.h"
-#include "OrientationConstraint.h"
-#include "StateGameObject.h"
-#include <fstream>
-
-
 
 using namespace NCL;
 using namespace CSC8503;
@@ -281,10 +262,12 @@ void TutorialGame::InitWorld() {
 	AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1),0);
 	AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f);
 	AddKeyDoorPairToWorld(Vector3(70, 3.5f, 10), Vector3(10, 0, 20), Debug::YELLOW);
-	
+	std::vector<Vector3> enemyPath;
+	enemyPath.emplace_back(Vector3(60, 0, 10 ));
+	enemyPath.emplace_back(Vector3(30, 0, 10 ));
+	AddEnemyToWorld(Vector3(70, 3.5f, 10), enemyPath);
 	AddCapsuleToWorld(Vector3(80, 0, 10), 1,0.7f);
 	AddSphereToWorld(Vector3(1, 0, 0), .3f, 0.7f);
-	//AddTestComponentObjectToWorld(Vector3(5, 5, 5));
 	world->StartWorld();
 }
 
@@ -589,13 +572,13 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 	return character;
 }
 
-GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position) {
+GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position, std::vector<Vector3>& patrolPoints) {
 	float meshSize		= 1.0f;
 	float inverseMass	= 0.5f;
 
 	GameObject* character = new GameObject();
 
-	CapsuleVolume* volume = new CapsuleVolume(meshSize*0.5f, meshSize * 0.33f);
+	CapsuleVolume* volume = new CapsuleVolume(meshSize, meshSize * 0.5f);
 	character->SetBoundingVolume((CollisionVolume*)volume);
 
 	character->GetTransform()
@@ -612,13 +595,12 @@ GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position) {
 	if (world->TryGetPhysMat("Player", enemyPhys))co->SetPhysMat(enemyPhys);
 
 	MovementApplierComponent* ma = new MovementApplierComponent(&character->GetTransform(), character->GetPhysicsObject(), 7000.0f);
-	SimpleChaseComponent* sc = new SimpleChaseComponent(character);
+	StateMachineEnemyComponent* sme = new StateMachineEnemyComponent(character,patrolPoints);
 
-
-	ma->SetInputComponent(sc);
+	ma->SetInputComponent(sme);
 
 	character->AddComponent(ma);
-	character->AddComponent(sc);
+	character->AddComponent(sme);
 
 	world->AddGameObject(character);
 
