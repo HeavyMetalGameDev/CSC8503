@@ -18,6 +18,9 @@ GameWorld::GameWorld()	{
 }
 
 GameWorld::~GameWorld()	{
+	for (GameObject* g : gameObjects) {
+		delete g;
+	}
 }
 
 void GameWorld::InitPhysicsMaterials() {

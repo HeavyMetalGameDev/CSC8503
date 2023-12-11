@@ -19,16 +19,16 @@ namespace NCL::CSC8503 {
 		stateMachine->AddTransition(new StateTransition(chasePlayerState, shootPlayerState,
 			[&]()->bool {
 				float distance = (playerObject->GetTransform().GetPosition() - gameObject->GetTransform().GetPosition()).Length();
-				return canSeePlayer && distance <= 15.0f; })); //shoot if is close enough
-		stateMachine->AddTransition(new StateTransition(shootPlayerState, chasePlayerState, 
+				return canSeePlayer && distance <= 25.0f; })); //shoot if is close enough
+		stateMachine->AddTransition(new StateTransition(shootPlayerState, chasePlayerState,
 			[&]()->bool {
-				float distance = (playerObject->GetTransform().GetPosition() - gameObject->GetTransform().GetPosition()).Length(); 
+				float distance = (playerObject->GetTransform().GetPosition() - gameObject->GetTransform().GetPosition()).Length();
 				return !canSeePlayer || distance >= 20.0f; })); //chase if can no longer see player or too far away
 		stateMachine->AddTransition(new StateTransition(chasePlayerState, returnToPatrolState, [&]()->bool {return !canSeePlayer && losePlayerTimer > 7.0f; })); //return to patrol if timer runs out
-		stateMachine->AddTransition(new StateTransition(returnToPatrolState, patrolState, 
+		stateMachine->AddTransition(new StateTransition(returnToPatrolState, patrolState,
 			[&]()->bool {
 				float distance = (patrolPoints[currentPatrolPoint] - gameObject->GetTransform().GetPosition()).Length();
-				return distance<2.0f; })); //patrol if close to patrol point
+				return distance < 2.0f; })); //patrol if close to patrol point
 		stateMachine->AddTransition(new StateTransition(returnToPatrolState, chasePlayerState,
 			[&]()->bool {return canSeePlayer; })); //chase player if we spot them while returning
 
@@ -68,10 +68,10 @@ namespace NCL::CSC8503 {
 		else {
 			losePlayerTimer += dt;
 			if (invalidPath) {
-				
+
 				nodePath = world->GetPath(gameObject->GetTransform().GetPosition(), playerObject->GetTransform().GetPosition());
 				if (nodePath.empty()) {
-					
+
 					moveDirection = Vector3();
 					return;
 				}
@@ -100,28 +100,26 @@ namespace NCL::CSC8503 {
 
 	}
 	void StateMachineEnemyComponent::ReturnToPatrol(float dt) {
-			if (invalidPath) {
-				nodePath = world->GetPath(gameObject->GetTransform().GetPosition(), patrolPoints[currentPatrolPoint]);
-				if (nodePath.empty()) {
+		if (invalidPath) {
+			nodePath = world->GetPath(gameObject->GetTransform().GetPosition(), patrolPoints[currentPatrolPoint]);
+			if (nodePath.empty()) {
 
-					moveDirection = Vector3();
-					return;
-				}
-				currentPathfindingNode = 0;
-				invalidPath = false;
-			}
-			if (currentPathfindingNode + 1 > nodePath.size())return;
-			Vector3 nextNode = nodePath[currentPathfindingNode + 1];
-			moveDirection = nextNode - gameObject->GetTransform().GetPosition();
-			moveDirection.y = 0;
-			moveDirection.Normalise();
-			Vector3 posNoY = gameObject->GetTransform().GetPosition();
-			posNoY.y = 0;
-			if ((nextNode - posNoY).Length() <= 1.5f) {
-				currentPathfindingNode += 1;
 				moveDirection = Vector3();
+				return;
 			}
-
+			currentPathfindingNode = 0;
+			invalidPath = false;
+		}
+		if (currentPathfindingNode + 1 > nodePath.size())return;
+		Vector3 nextNode = nodePath[currentPathfindingNode + 1];
+		moveDirection = nextNode - gameObject->GetTransform().GetPosition();
+		moveDirection.y = 0;
+		moveDirection.Normalise();
+		Vector3 posNoY = gameObject->GetTransform().GetPosition();
+		posNoY.y = 0;
+		if ((nextNode - posNoY).Length() <= 1.5f) {
+			currentPathfindingNode += 1;
+			moveDirection = Vector3();
 		}
 
 	}
@@ -144,10 +142,9 @@ namespace NCL::CSC8503 {
 		Vector3 playerDirection = (playerPos - thisPos).Normalised();
 		RayCollision rc;
 		Ray ray(thisPos, playerDirection);
-		if (world->Raycast(ray, rc, true,raycastCollideMap,gameObject)) {
+		if (world->Raycast(ray, rc, true, raycastCollideMap, gameObject)) {
 			GameObject* hit = (GameObject*)rc.node;
-			Debug::DrawLine(rc.collidedAt, thisPos,Debug::WHITE,1.0f);
-			if (hit->GetTag()=="Player"){
+			if (hit->GetTag() == "Player") {
 				return true;
 			}
 		}
