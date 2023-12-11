@@ -97,9 +97,12 @@ protected:
 
 
 class MenuScreen : public PushdownState {
+public:
+	MenuScreen() { tempWorld = new GameWorld(); r = new GameTechRenderer(*tempWorld); }
 	PushdownResult OnUpdate(float dt, PushdownState** newState) override {
 		Debug::Print("1: Start Game", Vector2(40, 30));
 		Debug::Print("ESCAPE: Exit Game", Vector2(40, 50));
+		tempWorld->UpdateWorld(dt);
 		r->Render();
 		if (Window::GetKeyboard()->KeyPressed(KeyCodes::NUM1)) {
 			*newState = new GameScreen();
@@ -111,11 +114,12 @@ class MenuScreen : public PushdownState {
 		return PushdownResult::NoChange;
 	}
 	void OnAwake() override {
-		r = new GameTechRenderer(*new GameWorld());
+		
 		std::cout << "Welcome to a really awesome game!\nPress Space To Begin or Escape to Quit!\n";
 	}
 protected:
 	GameTechRenderer* r;
+	GameWorld* tempWorld;
 };
 
 void RunPushdownAutomata(Window* w) {

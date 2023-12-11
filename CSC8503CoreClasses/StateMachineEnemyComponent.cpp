@@ -53,6 +53,7 @@ namespace NCL::CSC8503 {
 			if (playerObject->TryGetComponent<PlayerValuesComponent>(pvc)) {
 				pvc->ChangeHealth(-5);
 			}
+			Debug::DrawLine(playerObject->GetTransform().GetPosition(), gameObject->GetTransform().GetPosition(), Debug::RED, 0.5f);
 			std::cout << "SHOOT!" << dt << "\n";
 		}
 	}
@@ -84,7 +85,7 @@ namespace NCL::CSC8503 {
 				moveDirection = Vector3();
 				return;
 			}
-			if (currentPathfindingNode + 1 > nodePath.size())return;
+			if (currentPathfindingNode + 1 >= nodePath.size())return;
 			Vector3 nextNode = nodePath[currentPathfindingNode + 1];
 			moveDirection = nextNode - gameObject->GetTransform().GetPosition();
 			moveDirection.y = 0;
@@ -110,7 +111,7 @@ namespace NCL::CSC8503 {
 			currentPathfindingNode = 0;
 			invalidPath = false;
 		}
-		if (currentPathfindingNode + 1 > nodePath.size())return;
+		if (currentPathfindingNode + 1 >= nodePath.size())return;
 		Vector3 nextNode = nodePath[currentPathfindingNode + 1];
 		moveDirection = nextNode - gameObject->GetTransform().GetPosition();
 		moveDirection.y = 0;

@@ -99,6 +99,17 @@ void GameWorld::OperateOnContents(GameObjectFunc f) {
 }
 
 void GameWorld::UpdateWorld(float dt) {
+	switch (state) {
+	case STATE_PLAYING:
+		break;
+
+	case STATE_WIN:
+		Debug::Print("WIN!!!!!!!!!!!", { 40,50 }, Debug::GREEN);
+		break;
+	case STATE_LOSE:
+		Debug::Print("LOSE!!!!!!!!!!!", { 40,50 }, Debug::RED);
+		break;
+	}
 	for (GameObject* gameObject : gameObjects)gameObject->Update(dt);
 	auto rng = std::default_random_engine{};
 

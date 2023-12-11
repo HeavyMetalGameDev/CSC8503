@@ -1,9 +1,12 @@
 #pragma once
 #include "Component.h"
+#include "GameWorld.h"
 namespace NCL::CSC8503 {
+	class TutorialGame;
 	class PlayerValuesComponent : public Component
 	{
 	public:
+		PlayerValuesComponent(GameWorld* gw) { world = gw; }
 		void SetPoints(int p) { points = p; }
 		void AddPoints(int p) { points += p; }
 		int GetPoints() { return points; }
@@ -16,6 +19,7 @@ namespace NCL::CSC8503 {
 	protected:
 		int points=0;
 		int health=100;
+		GameWorld* world;
 
 	};
 }

@@ -441,10 +441,16 @@ bool CollisionDetection::OBBCapsuleIntersection( //-----------------------------
 	Vector3 localCapPosition = worldTransformB.GetPosition() - worldTransformA.GetPosition();
 	Transform localCapTransform;
 	localCapTransform.SetPosition((invTransform * localCapPosition) + worldTransformB.GetPosition());
-	Vector3 toEuler =invTransform * localCapTransform.GetOrientation().ToEuler();
-	localCapTransform.SetOrientation(Quaternion::EulerAnglesToQuaternion(toEuler.x,toEuler.y,toEuler.z));
-	Debug::DrawLine(worldTransformB.GetPosition(), localCapPosition + worldTransformB.GetPosition());
+	localCapTransform.SetOrientation(invTransform * localCapTransform.GetOrientation());
+
+	Matrix3 capTransform = Matrix3(localCapTransform.GetOrientation());
+	Vector3 capDirection = (capTransform * Vector3(0, 1, 0)).Normalised();
+	Vector3 capMax = localCapTransform.GetPosition() + capDirection * volumeA.GetHalfHeight();
+	Vector3 capMin = localCapTransform.GetPosition() - capDirection * volumeA.GetHalfHeight();
+
+	Debug::DrawLine(capMax, capMin);
 	AABBVolume aabb = AABBVolume(volumeB.GetHalfDimensions());
+	Transform aabbTransform;
 	bool collided = AABBCapsuleIntersection(volumeA, localCapTransform, aabb, worldTransformB, collisionInfo);
 	if (collided) {
 		collisionInfo.point.localA = transform * collisionInfo.point.localB;

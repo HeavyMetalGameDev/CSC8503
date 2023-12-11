@@ -66,7 +66,7 @@ namespace NCL::CSC8503 {
 
 		heldObject->GetPhysicsObject()->SetAngularVelocity(Vector3());
 
-		if(heldObject->GetBoundingVolume()->type != VolumeType::AABB) //dont rotate AABBs
+		if(heldObject->GetBoundingVolume()->type != VolumeType::AABB || heldObject->GetTag()=="Enemy") //dont rotate AABBs or enemies
 			heldObject->GetTransform().SetOrientation(Quaternion::EulerAnglesToQuaternion(camera->GetPitch(), camera->GetYaw(), 0));
 	}
 

@@ -23,7 +23,10 @@
 #include "PointPickupComponent.h"
 #include "PlayerValuesComponent.h"
 #include "StateMachineEnemyComponent.h"
+#include "UnlockGrappleComponent.h"
 #include "KeyComponent.h"
+#include "JumppadComponent.h"
+#include "TreasureReturnPointComponent.h"
 #include "Assets.h"
 
 #include "PositionConstraint.h"
@@ -39,7 +42,6 @@ namespace NCL {
 			~TutorialGame();
 
 			virtual void UpdateGame(float dt);
-
 		protected:
 			void InitialiseAssets();
 
@@ -69,10 +71,15 @@ namespace NCL {
 			GameObject* AddSphereToWorld(const Vector3& position, float radius, float inverseMass = 10.0f);
 			GameObject* AddCapsuleToWorld(const Vector3& position, float size, float inverseMass = 10.0f);
 			GameObject* AddPointPickupToWorld(const Vector3& position, int points);
+			GameObject* AddGrappleUnlockerToWorld(const Vector3& position);
 			GameObject* AddSphereTriggerToWorld(const Vector3& position, float radius);
 			GameObject* AddCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass = 10.0f);
+			void AddCubeWallToWorld(const Vector3& position);
 			GameObject* AddOBBCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass = 10.0f);
 			GameObject* AddWallToWorld(const Vector3& position, Vector3 dimensions);
+			GameObject* AddJumppad(const Vector3& position);
+			GameObject* AddTreasure(const Vector3& position);
+			GameObject* AddTreasurePoint(const Vector3& position);
 			void AddRopeToWorld(const Vector3& position);
 
 			GameObject* AddPlayerToWorld(const Vector3& position);
@@ -104,6 +111,9 @@ namespace NCL {
 			Mesh*	capsuleMesh = nullptr;
 			Mesh*	cubeMesh	= nullptr;
 			Mesh*	sphereMesh	= nullptr;
+			Mesh* pickupMesh = nullptr;
+			Mesh* coinMesh = nullptr;
+			Mesh* gooseMesh = nullptr;
 
 			Texture*	basicTex	= nullptr;
 			Shader*		basicShader = nullptr;
@@ -121,6 +131,7 @@ namespace NCL {
 			}
 
 			GameObject* objClosest = nullptr;
+			float gameTimer = 180;
 		};
 	}
 }

@@ -48,6 +48,9 @@ void TutorialGame::InitialiseAssets() {
 	enemyMesh	= renderer->LoadMesh("Keeper.msh");
 	bonusMesh	= renderer->LoadMesh("apple.msh");
 	capsuleMesh = renderer->LoadMesh("capsule.msh");
+	pickupMesh = renderer->LoadMesh("Diamondo.msh");
+	coinMesh = renderer->LoadMesh("coin.msh");
+	gooseMesh = renderer->LoadMesh("goose.msh");
 
 	basicTex	= renderer->LoadTexture("checkerboard.png");
 	basicShader = renderer->LoadShader("scene.vert", "scene.frag");
@@ -73,6 +76,8 @@ TutorialGame::~TutorialGame()	{
 }
 
 void TutorialGame::UpdateGame(float dt) {
+	gameTimer -= dt;
+	Debug::Print("Time:" + std::to_string(((int)gameTimer)), { 5, 5 });
 	if (!inSelectionMode) {
 		world->GetMainCamera().UpdateCamera(dt);
 	}
@@ -116,9 +121,6 @@ void TutorialGame::UpdateGame(float dt) {
 			objClosest->GetRenderObject()->SetColour(Vector4(1, 0, 1, 1));
 		}
 	}
-
-	Debug::DrawLine(Vector3(), Vector3(0, 100, 0), Vector4(1, 0, 0, 1));
-
 
 	world->UpdateWorld(dt);
 	renderer->Update(dt);
@@ -255,19 +257,29 @@ void TutorialGame::InitWorld() {
 	InitDefaultFloor();
 	//testStateObject = AddStateObjectToWorld(Vector3(0, 10, 0));
 	
-	//STARTING ROOM--------------------------------------------------------------
+	//STARTING ROOM----------------------------------------------------------------------------------------------------------------------
 	AddPlayerToWorld(Vector3(80, 0, 10));
-	//AddOBBCubeToWorld(Vector3(70, -5, 10),Vector3(1,1,1));
-	//AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1),0);
-	//AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f);
+	//AddOBBCubeToWorld(Vector3(70, -5, 10),Vector3(3,1,3));
+	AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1),0);
+	AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f);
 	AddKeyDoorPairToWorld(Vector3(70, 3.5f, 10), Vector3(10, 0, 20), Debug::YELLOW);
-	std::vector<Vector3> enemyPath;
-	enemyPath.emplace_back(Vector3(60, 0, 10 ));
-	enemyPath.emplace_back(Vector3(30, 0, 10 ));
-	AddEnemyToWorld(Vector3(70, 3.5f, 10), enemyPath);
+	AddTreasurePoint(Vector3(85, -3, 10));
+
 	AddCapsuleToWorld(Vector3(80, 0, 10), 1,0.7f);
 	AddRopeToWorld(Vector3(50, 5, 10));
+	AddCubeWallToWorld(Vector3(30, -4, 6));
+	AddJumppad(Vector3(20, -5, 40));
 	//AddSphereToWorld(Vector3(1, 0, 0), .3f, 0.7f);
+
+	std::vector<Vector3> enemyPath;
+	enemyPath.emplace_back(Vector3(60, 0, 40));
+	enemyPath.emplace_back(Vector3(60, 0, 60));
+	AddEnemyToWorld(Vector3(60, 0, 40), enemyPath);
+	AddGrappleUnlockerToWorld(Vector3(80, 0, 80));
+
+
+	AddTreasure(Vector3(80, 20, 10));
+
 	world->StartWorld();
 }
 
@@ -384,6 +396,62 @@ GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius
 	return sphere;
 }
 
+GameObject* TutorialGame::AddTreasure(const Vector3& position) {
+	float radius = 1.0f;
+	GameObject* treasure = new GameObject();
+	treasure->SetTag("Treasure");
+
+	Vector3 treasureSize = Vector3(radius, radius, radius);
+	SphereVolume* volume = new SphereVolume(radius);
+	treasure->SetBoundingVolume((CollisionVolume*)volume);
+
+	treasure->GetTransform()
+		.SetScale(treasureSize)
+		.SetPosition(position);
+
+	treasure->SetRenderObject(new RenderObject(&treasure->GetTransform(), gooseMesh, basicTex, basicShader));
+	treasure->SetPhysicsObject(new PhysicsObject(&treasure->GetTransform(), treasure->GetBoundingVolume()));
+	treasure->GetRenderObject()->SetColour(Debug::YELLOW);
+
+	PhysicsObject* so = treasure->GetPhysicsObject();
+	so->SetInverseMass(0.2f);
+	so->InitSphereInertia();
+
+	PhysicsMaterial* treasurePhys;
+	if (world->TryGetPhysMat("Standard", treasurePhys))so->SetPhysMat(treasurePhys);
+
+	world->AddGameObject(treasure);
+
+	return treasure;
+}
+
+GameObject* TutorialGame::AddTreasurePoint(const Vector3& position) {
+	GameObject* trigger = new GameObject();
+	trigger->SetTag("TreasurePoint");
+
+	Vector3 triggerSize = Vector3(5, 5, 10);
+	AABBVolume* volume = new AABBVolume(triggerSize*0.5f);
+	trigger->SetBoundingVolume((CollisionVolume*)volume);
+
+	trigger->GetTransform()
+		.SetScale(triggerSize)
+		.SetPosition(position);
+
+	trigger->SetRenderObject(new RenderObject(&trigger->GetTransform(), cubeMesh, basicTex, basicShader));
+	trigger->SetPhysicsObject(new PhysicsObject(&trigger->GetTransform(), trigger->GetBoundingVolume(), true, true, PICKUP_SPHERE_LAYER));
+	trigger->GetRenderObject()->SetColour({ 1,1,0,0.5f });
+
+	TreasureReturnPointComponent* trp = new TreasureReturnPointComponent(world);
+	trigger->AddComponent(trp);
+
+	//PhysicsMaterial* spherePhys;
+	//if (world->TryGetPhysMat("Bouncy", spherePhys))so->SetPhysMat(spherePhys);
+
+	world->AddGameObject(trigger);
+
+	return trigger;
+}
+
 GameObject* TutorialGame::AddSphereTriggerToWorld(const Vector3& position, float radius) {
 	GameObject* sphere = new GameObject();
 	sphere->SetTag("SphereTrigger");
@@ -416,12 +484,16 @@ GameObject* TutorialGame::AddPointPickupToWorld(const Vector3& position, int poi
 	sphere->SetBoundingVolume((CollisionVolume*)volume);
 
 	sphere->GetTransform()
-		.SetScale(sphereSize)
+		.SetScale(sphereSize*0.2f)
+		.SetScale(sphereSize*0.2f)
+		.SetScale(sphereSize*0.2f
+		
+		)
 		.SetPosition(position);
 
-	sphere->SetRenderObject(new RenderObject(&sphere->GetTransform(), sphereMesh, basicTex, basicShader));
+	sphere->SetRenderObject(new RenderObject(&sphere->GetTransform(), coinMesh, basicTex, basicShader));
 	sphere->SetPhysicsObject(new PhysicsObject(&sphere->GetTransform(), sphere->GetBoundingVolume(), false, true,STATIC_LAYER));
-	sphere->GetRenderObject()->SetColour(Debug::BLUE);
+	sphere->GetRenderObject()->SetColour(Debug::YELLOW);
 
 	PointPickupComponent* ppc = new PointPickupComponent(world,sphere, points);
 	sphere->AddComponent(ppc);
@@ -433,7 +505,56 @@ GameObject* TutorialGame::AddPointPickupToWorld(const Vector3& position, int poi
 
 	return sphere;
 }
+GameObject* TutorialGame::AddGrappleUnlockerToWorld(const Vector3& position) {
+	GameObject* sphere = new GameObject();
+	sphere->SetTag("GrapplePickup");
 
+	Vector3 sphereSize = Vector3(.5f, .5f, .5f);
+	SphereVolume* volume = new SphereVolume(.5f);
+	sphere->SetBoundingVolume((CollisionVolume*)volume);
+
+	sphere->GetTransform()
+		.SetScale(sphereSize)
+		.SetPosition(position);
+
+	sphere->SetRenderObject(new RenderObject(&sphere->GetTransform(), pickupMesh, basicTex, basicShader));
+	sphere->SetPhysicsObject(new PhysicsObject(&sphere->GetTransform(), sphere->GetBoundingVolume(), false, true,STATIC_LAYER));
+	sphere->GetRenderObject()->SetColour(Debug::GREEN);
+
+	UnlockGrappleComponent* ug = new UnlockGrappleComponent();
+	sphere->AddComponent(ug);
+
+	//PhysicsMaterial* spherePhys;
+	//if (world->TryGetPhysMat("Bouncy", spherePhys))so->SetPhysMat(spherePhys);
+
+	world->AddGameObject(sphere);
+
+	return sphere;
+}
+GameObject* TutorialGame::AddJumppad(const Vector3& position) {
+	GameObject* jp = new GameObject();
+	jp->SetTag("Jumppad");
+
+	Vector3 size = Vector3(7.0f, 1.0f, 7.0f);
+	AABBVolume* volume = new AABBVolume(size*0.5f);
+	jp->SetBoundingVolume((CollisionVolume*)volume);
+
+	jp->GetTransform()
+		.SetScale(size)
+		.SetPosition(position);
+
+	jp->SetRenderObject(new RenderObject(&jp->GetTransform(), cubeMesh, basicTex, basicShader));
+	jp->SetPhysicsObject(new PhysicsObject(&jp->GetTransform(), jp->GetBoundingVolume(), false, true, STATIC_LAYER));
+	jp->GetRenderObject()->SetColour(Debug::MAGENTA);
+
+	JumppadComponent* jpc = new JumppadComponent();
+	//PhysicsMaterial* spherePhys;
+	//if (world->TryGetPhysMat("Bouncy", spherePhys))so->SetPhysMat(spherePhys);
+	jp->AddComponent(jpc);
+	world->AddGameObject(jp);
+
+	return jp;
+}
 GameObject* TutorialGame::AddCapsuleToWorld(const Vector3& position, float size, float inverseMass) {
 	GameObject* capsule = new GameObject();
 	capsule->SetTag("Capsule");
@@ -491,6 +612,15 @@ GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimens
 
 	return cube;
 }
+void TutorialGame::AddCubeWallToWorld(const Vector3& position) {
+	for (int x = 0; x < 5; x++) {
+		for (int y = 0; y < 5; y++) {
+			Vector3 cubePos = Vector3(position.x, position.y + y*2, position.z + x*2);
+			AddCubeToWorld(cubePos, Vector3(0.98f, 0.98f, 0.98f), 0.5f);
+		}
+	}
+
+}
 GameObject* TutorialGame::AddOBBCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass) {
 	GameObject* cube = new GameObject();
 
@@ -547,7 +677,7 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 	float inverseMass	= 0.8f;
 
 	GameObject* character = new GameObject();
-	CapsuleVolume* volume  = new CapsuleVolume(1.0f,0.5f);
+	CapsuleVolume* volume  = new CapsuleVolume(meshSize*0.5f,meshSize*0.5f);
 
 	character->SetBoundingVolume((CollisionVolume*)volume);
 
@@ -574,9 +704,9 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 	MovementApplierComponent* ma = new MovementApplierComponent(&character->GetTransform(), character->GetPhysicsObject(),7000.0f);
 	FirstPersonInputComponent* fps = new FirstPersonInputComponent(&world->GetMainCamera());
 	PlayerInputComponent* pic = new PlayerInputComponent(character, &world->GetMainCamera());
-	PlayerValuesComponent* pvc = new PlayerValuesComponent();
+	PlayerValuesComponent* pvc = new PlayerValuesComponent(world);
 
-	GameObject* pickupObject = AddSphereTriggerToWorld(Vector3(-1, 10, 0), 0.6f);
+	GameObject* pickupObject = AddSphereTriggerToWorld(Vector3(-1, 10, 0), 0.8f);
 
 	TriggerComponent* tc = new TriggerComponent();
 
@@ -600,8 +730,9 @@ GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position, std::vector<V
 	float inverseMass	= 0.5f;
 
 	GameObject* character = new GameObject();
+	character->SetTag("Enemy");
 
-	CapsuleVolume* volume = new CapsuleVolume(meshSize, meshSize * 0.5f);
+	CapsuleVolume* volume = new CapsuleVolume(meshSize * 0.5f, meshSize * 0.5f);
 	character->SetBoundingVolume((CollisionVolume*)volume);
 
 	character->GetTransform()
@@ -610,6 +741,7 @@ GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position, std::vector<V
 
 	character->SetRenderObject(new RenderObject(&character->GetTransform(), capsuleMesh, nullptr, basicShader));
 	character->SetPhysicsObject(new PhysicsObject(&character->GetTransform(), character->GetBoundingVolume()));
+	character->GetRenderObject()->SetColour(Debug::RED);
 
 	PhysicsObject* co = character->GetPhysicsObject();
 	co->SetInverseMass(inverseMass);
@@ -830,7 +962,7 @@ void TutorialGame::CreateStaticLevel() {
 			infile >> type;
 			if (type == 'r') { //roof
 				AddWallToWorld(Vector3((float)(x * nodeSize), nodeSize * 1, (float)(y * nodeSize)), Vector3(nodeSize, nodeSize, nodeSize) * 0.5f);
-				AddPointPickupToWorld(Vector3((float)(x * nodeSize), -3, (float)(y * nodeSize)), 10);
+				AddPointPickupToWorld(Vector3((float)(x * nodeSize), -4, (float)(y * nodeSize)), 10);
 			}
 			else if (type != '.') {
 				int intType = type - '0';

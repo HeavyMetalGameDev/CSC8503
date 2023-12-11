@@ -11,7 +11,7 @@ namespace NCL::CSC8503{
 		if (Window::GetKeyboard()->KeyPressed(KeyCodes::SPACE)) {
 			Ray ray(gameObject->GetTransform().GetPosition(), { 0,-1,0 });
 			RayCollision rc;
-			if (worldRef->Raycast(ray, rc, true, gameObject)) {
+			if (worldRef->Raycast(ray, rc, true, raycastCollideMap, gameObject)) {
 				if ((rc.collidedAt - gameObject->GetTransform().GetPosition()).Length() < 2.0f) {
 					hasJumped = true;
 				}

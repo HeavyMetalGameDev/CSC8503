@@ -82,6 +82,14 @@ set(Components
     "StateMachineEnemyComponent.h"
     "TriggerComponent.cpp"
     "TriggerComponent.h"
+    "UnlockGrappleComponent.cpp"
+    "UnlockGrappleComponent.h"
+    "HoverComponent.cpp"
+    "HoverComponent.h"
+    "JumppadComponent.cpp"
+    "JumppadComponent.h"
+    "TreasureReturnPointComponent.cpp"
+    "TreasureReturnPointComponent.h"
 )
 source_group("Components" FILES ${Components})
 
@@ -96,6 +104,7 @@ set(Networking
     "NetworkObject.cpp"
     "NetworkState.h"
     "NetworkState.cpp"
+    
 )
 source_group("Networking" FILES ${Networking})
 

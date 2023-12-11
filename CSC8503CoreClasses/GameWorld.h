@@ -13,6 +13,9 @@ namespace NCL {
 	namespace CSC8503 {
 		class GameObject;
 		class Constraint;
+		enum GameState {
+			STATE_PLAYING, STATE_WIN, STATE_LOSE
+		};
 
 		typedef std::function<void(GameObject*)> GameObjectFunc;
 		typedef std::vector<GameObject*>::const_iterator GameObjectIterator;
@@ -42,6 +45,9 @@ namespace NCL {
 			void ShuffleObjects(bool state) {
 				shuffleObjects = state;
 			}
+
+			void WinGame() { state = STATE_WIN; }
+			void LoseGame() { state = STATE_LOSE; }
 
 			bool Raycast(Ray& r, RayCollision& closestCollision, bool closestObject = false, GameObject* ignore = nullptr) const;
 			bool Raycast(Ray& r, RayCollision& closestCollision, bool closestObject, const std::map<int, bool> raycastCollideMap, GameObject* ignore) const;
@@ -78,6 +84,7 @@ namespace NCL {
 
 			PerspectiveCamera mainCamera;
 
+			GameState state = STATE_PLAYING;
 			bool shuffleConstraints;
 			bool shuffleObjects;
 			int		worldIDCounter;
