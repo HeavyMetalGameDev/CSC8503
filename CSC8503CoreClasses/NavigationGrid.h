@@ -33,6 +33,12 @@ namespace NCL {
 				isClosed = false;
 			}
 			~GridNode() {	}
+			void ResetNode() {
+				f = 0;
+				g = 0;
+				isOpen = false;
+				isClosed = false;
+			}
 		};
 		struct NodePointerComparator {
 			bool operator()(GridNode* const& n1, GridNode* const& n2) {
@@ -44,6 +50,14 @@ namespace NCL {
 			NavigationGrid();
 			NavigationGrid(const std::string&filename);
 			~NavigationGrid();
+
+			void ResetGrid() {
+				for (int x = 0; x < gridWidth; x++) {
+					for (int y = 0; y < gridHeight; y++) {
+						allNodes[x * gridWidth + y].ResetNode();
+					}
+				}
+			}
 
 			bool FindPath(const Vector3& from, const Vector3& to, NavigationPath& outPath) override;
 				

@@ -6,6 +6,8 @@
 #include "MovementInput.h"
 #include "Vector3.h"
 #include "PlayerValuesComponent.h"
+#include "NavigationGrid.h"
+#include "NavigationMap.h"
 #include <iostream>
 #include <vector>
 namespace NCL::CSC8503 {
@@ -19,8 +21,11 @@ namespace NCL::CSC8503 {
 		void ChasePlayer(float dt);
 		void ShootPlayer(float dt);
 		void Patrol(float dt);
+		void ReturnToPatrol(float dt);
 
 		bool CheckForPlayerLOS();
+
+
 
 		Vector3 GetMovementDirection() override;
 		void Start(GameWorld* gw)override;
@@ -32,6 +37,7 @@ namespace NCL::CSC8503 {
 		GameObject* playerObject;
 		StateMachine* stateMachine;
 		bool canSeePlayer=false;
+		bool invalidPath = true;
 		float losePlayerTimer=0;
 		float shootTimer=0;
 

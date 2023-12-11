@@ -4,6 +4,9 @@
 #include "Ray.h"
 #include "CollisionDetection.h"
 #include "QuadTree.h"
+#include "NavigationGrid.h"
+#include "NavigationPath.h"
+
 namespace NCL {
 		class Camera;
 		using Maths::Ray;
@@ -66,6 +69,8 @@ namespace NCL {
 
 			bool TryGetPhysMat(std::string name, PhysicsMaterial*& physMat);
 
+			std::vector<Vector3> GetPath(Vector3 start, Vector3 end);
+
 		protected:
 			std::vector<GameObject*> gameObjects;
 			std::vector<Constraint*> constraints;
@@ -78,6 +83,7 @@ namespace NCL {
 			int		worldIDCounter;
 			int		worldStateCounter;
 			const std::map<int, bool> defaultRaycastMap = { {1,true},{2,true},{4,true},{8,false} };
+			NavigationGrid* grid;
 		};
 	}
 }

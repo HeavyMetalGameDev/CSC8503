@@ -250,24 +250,24 @@ void TutorialGame::InitWorld() {
 	world->ClearAndErase();
 	physics->Clear();
 
-	InitMixedGridWorld(15, 15, 3.5f, 3.5f);
+	//InitMixedGridWorld(15, 15, 3.5f, 3.5f);
 	CreateStaticLevel();
 	InitDefaultFloor();
-	//BridgeConstraintTest();
 	//testStateObject = AddStateObjectToWorld(Vector3(0, 10, 0));
 	
 	//STARTING ROOM--------------------------------------------------------------
 	AddPlayerToWorld(Vector3(80, 0, 10));
 	//AddOBBCubeToWorld(Vector3(70, -5, 10),Vector3(1,1,1));
-	AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1),0);
-	AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f);
+	//AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1),0);
+	//AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f);
 	AddKeyDoorPairToWorld(Vector3(70, 3.5f, 10), Vector3(10, 0, 20), Debug::YELLOW);
 	std::vector<Vector3> enemyPath;
 	enemyPath.emplace_back(Vector3(60, 0, 10 ));
 	enemyPath.emplace_back(Vector3(30, 0, 10 ));
 	AddEnemyToWorld(Vector3(70, 3.5f, 10), enemyPath);
 	AddCapsuleToWorld(Vector3(80, 0, 10), 1,0.7f);
-	AddSphereToWorld(Vector3(1, 0, 0), .3f, 0.7f);
+	AddRopeToWorld(Vector3(50, 5, 10));
+	//AddSphereToWorld(Vector3(1, 0, 0), .3f, 0.7f);
 	world->StartWorld();
 }
 
@@ -295,6 +295,29 @@ void TutorialGame::BridgeConstraintTest() {
 	}
 	PositionConstraint* constraint = new PositionConstraint(previous, end, maxDistance);
 	world->AddConstraint(constraint);
+}
+
+void TutorialGame::AddRopeToWorld(const Vector3& position) {
+	Vector3 cubeSize = Vector3(0.2f, 0.3f, 0.2f);
+
+	float invCubeMass = 0.4f;
+	int numLinks = 12;
+	float maxDistance = 0.7f;
+	float cubeDistance = -0.8f;
+
+	Vector3 startPos = position;
+
+	GameObject* start = AddCubeToWorld(startPos, cubeSize, 0);
+
+	GameObject* previous = start;
+
+	for (int i = 0; i < numLinks; i++) {
+		GameObject* block = AddCubeToWorld(startPos + Vector3(0, (i + 1) * cubeDistance, 0), cubeSize, invCubeMass);
+
+		PositionConstraint* constraint = new PositionConstraint(previous, block, maxDistance);
+		world->AddConstraint(constraint);
+		previous = block;
+	}
 }
 
 /*

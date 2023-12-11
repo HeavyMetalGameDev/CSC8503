@@ -400,19 +400,19 @@ bool CollisionDetection::AABBCapsuleIntersection( //----------------------------
 	Vector3 cubePos = worldTransformB.GetPosition();
 	Vector3 cubeSize = volumeB.GetHalfDimensions();
 
-	Vector3 delta = capPos - cubePos;
+	Vector3 delta = capMax - cubePos;
 
 
 	Vector3 closestLocalPointOnBox = Maths::Vec3Clamp(delta, -cubeSize, cubeSize);
 	Vector3 closestPointOnBox = closestLocalPointOnBox + cubePos;
 
-	Vector3 capsuleToPoint = (closestPointOnBox - capMax);
+	Vector3 capsuleMaxToPoint = (closestPointOnBox - capMax);
 	Vector3 minToMax = (capMin - capMax);
 
 	
 
-	float capsuleToPointLength = capsuleToPoint.Length();
-	float dot = Vector3::Dot(capsuleToPoint, minToMax);
+	float capsuleToPointLength = capsuleMaxToPoint.Length();
+	float dot = Vector3::Dot(capsuleMaxToPoint, minToMax);
 
 	float distance = dot / capsuleToPointLength;
 
@@ -421,27 +421,11 @@ bool CollisionDetection::AABBCapsuleIntersection( //----------------------------
 	else if (distance > 1)closestPoint = capMin;
 	else closestPoint = capMax + minToMax * distance;
 
-	Vector3 collisionDirection = (closestPointOnBox-closestPoint).Normalised();
-
-	Vector3 capsuleSpherePoint = closestPoint + (collisionDirection)*capRadius;
-
+	//Debug::DrawLine(closestPointOnBox, closestPoint);
 	Transform sphereTransform = Transform();
 	sphereTransform.SetPosition(closestPoint);
 	SphereVolume sphereVolume = SphereVolume(capRadius);
 	return AABBSphereIntersection(volumeB, sphereTransform, sphereVolume, worldTransformB, collisionInfo);
-	
-	//if ((closestPointOnBox - closestPoint).Length() < capRadius) { 
-	//	float penetration = capRadius-(closestPointOnBox - closestPoint).Length(); //----------------FIX THIS-------------------------
-	//	std::cout << penetration << "\n";
-	//	Vector3 normal = -Vector3( 0,1,0 );//(capsuleSpherePoint - closestPointOnBox).Normalised(); //--------------------------------------FIX THIS-------------------------
-	//	
-	//	std::cout << normal << "\n";
-	//	collisionInfo.AddContactPoint(closestPointOnBox, capsuleSpherePoint,normal,penetration);
-	//	std::cout << "COLLISION\n";
-	//	return true;
-	//}
-
-	//return false;
 }
 
 bool CollisionDetection::OBBCapsuleIntersection( //----------------------------------------------------fix this

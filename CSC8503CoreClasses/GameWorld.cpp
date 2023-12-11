@@ -14,6 +14,7 @@ GameWorld::GameWorld()	{
 	worldIDCounter		= 0;
 	worldStateCounter	= 0;
 	InitPhysicsMaterials();
+	grid = new NavigationGrid("TestGrid1.txt");
 }
 
 GameWorld::~GameWorld()	{
@@ -35,6 +36,18 @@ void GameWorld::InitPhysicsMaterials() {
 	player.linearDampHorizontal = 8.0f;
 	player.angularDamp = 8.0f;
 	physicsMaterials["Player"] = player;
+}
+
+std::vector<Vector3> GameWorld::GetPath(Vector3 start, Vector3 end) {
+	NavigationPath outPath;
+
+	bool found = grid->FindPath(start, end, outPath);
+
+	Vector3 pos;
+	std::vector<Vector3> path;
+	while (outPath.PopWaypoint(pos))path.push_back(pos);
+
+	return path;
 }
 
 void GameWorld::Clear() {
@@ -187,6 +200,9 @@ bool GameWorld::Raycast(Ray& r, RayCollision& closestCollision, bool closestObje
 					collision = thisCollision;
 				}
 			}
+		}
+		else {
+			std::cout << "";
 		}
 	}
 	if (collision.node) {

@@ -43,7 +43,10 @@ class GameScreen : public PushdownState {
 	public:
 	GameScreen(){ 
 		g = new TutorialGame();
-		TestPathfinding();
+		//TestPathfinding();
+	}
+	~GameScreen() {
+		delete g;
 	}
 
 	void TestPathfinding() {
@@ -60,16 +63,19 @@ class GameScreen : public PushdownState {
 		while (outPath.PopWaypoint(pos))testNodes.push_back(pos);
 	}
 
-	PushdownResult OnUpdate(float dt, PushdownState** newState) override {
-		if (dt > 0.1f) {
-			std::cout << "Skipping large time delta" << std::endl;
-			return PushdownResult::NoChange; //must have hit a breakpoint or something to have a 1 second frame time!
-		}
+	void DisplayPathfinding() {
 		for (int i = 1; i < testNodes.size(); i++) {
 			Vector3 a = testNodes[i - 1];
 			Vector3 b = testNodes[i];
 
 			Debug::DrawLine(a, b, Vector4(0, 1, 0, 1));
+		}
+	}
+
+	PushdownResult OnUpdate(float dt, PushdownState** newState) override {
+		if (dt > 0.1f) {
+			std::cout << "Skipping large time delta" << std::endl;
+			return PushdownResult::NoChange; //must have hit a breakpoint or something to have a 1 second frame time!
 		}
 		if (Window::GetKeyboard()->KeyPressed(KeyCodes::ESCAPE)) {
 			return PushdownResult::Pop;
@@ -80,6 +86,7 @@ class GameScreen : public PushdownState {
 			*newState = new PauseScreen();
 			return PushdownResult::Push;
 		}
+		//DisplayPathfinding();
 		g->UpdateGame(dt);
 		return PushdownResult::NoChange;
 	};
@@ -104,7 +111,7 @@ class MenuScreen : public PushdownState {
 		return PushdownResult::NoChange;
 	}
 	void OnAwake() override {
-		r = new GameTechRenderer(*(new GameWorld()));
+		r = new GameTechRenderer(*new GameWorld());
 		std::cout << "Welcome to a really awesome game!\nPress Space To Begin or Escape to Quit!\n";
 	}
 protected:
@@ -133,14 +140,7 @@ void TestPathfinding() {
 	while (outPath.PopWaypoint(pos))testNodes.push_back(pos);
 }
 
-void DisplayPathfinding() {
-	for (int i = 1; i < testNodes.size(); i++) {
-		Vector3 a = testNodes[i - 1];
-		Vector3 b = testNodes[i];
 
-		Debug::DrawLine(a, b, Vector4(0, 1, 0, 1));
-	}
-}
 
 void TestStateMachine() {
 	StateMachine* testMachine = new StateMachine();
