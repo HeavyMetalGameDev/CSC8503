@@ -25,6 +25,7 @@ namespace NCL::CSC8503 {
         PhysicsObject* physObject;
         GameObject* grappledObject;
         Vector3 staticGrapplePoint;
+        const std::map<int, bool> raycastCollideMap = { {1,true},{2,false},{4,true},{8,false} };
     };
 }
 

@@ -4,7 +4,6 @@
 #include "Ray.h"
 #include "CollisionDetection.h"
 #include "QuadTree.h"
-#include "PhysicsSystem.h"
 namespace NCL {
 		class Camera;
 		using Maths::Ray;
@@ -42,7 +41,7 @@ namespace NCL {
 			}
 
 			bool Raycast(Ray& r, RayCollision& closestCollision, bool closestObject = false, GameObject* ignore = nullptr) const;
-
+			bool Raycast(Ray& r, RayCollision& closestCollision, bool closestObject, const std::map<int, bool> raycastCollideMap, GameObject* ignore) const;
 			virtual void UpdateWorld(float dt);
 			virtual void StartWorld();
 			virtual void UpdateWorldPhysics(float dt);
@@ -71,11 +70,6 @@ namespace NCL {
 			std::vector<GameObject*> gameObjects;
 			std::vector<Constraint*> constraints;
 			std::map<std::string, PhysicsMaterial> physicsMaterials;
-			const std::map<int, bool> raycastCollideMap = {
-				{1,true},
-				{2,false},
-				{4,true},
-				{8,false}};
 
 			PerspectiveCamera mainCamera;
 
@@ -83,6 +77,7 @@ namespace NCL {
 			bool shuffleObjects;
 			int		worldIDCounter;
 			int		worldStateCounter;
+			const std::map<int, bool> defaultRaycastMap = { {1,true},{2,true},{4,true},{8,false} };
 		};
 	}
 }

@@ -5,6 +5,7 @@
 #include "GameWorld.h"
 #include "MovementInput.h"
 #include "Vector3.h"
+#include "PlayerValuesComponent.h"
 #include <iostream>
 #include <vector>
 namespace NCL::CSC8503 {
@@ -19,7 +20,7 @@ namespace NCL::CSC8503 {
 		void ShootPlayer(float dt);
 		void Patrol(float dt);
 
-		bool CheckForPlayerLOS(Vector3 direction);
+		bool CheckForPlayerLOS();
 
 		Vector3 GetMovementDirection() override;
 		void Start(GameWorld* gw)override;
@@ -40,6 +41,7 @@ namespace NCL::CSC8503 {
 		std::vector<Vector3> nodePath;
 		int currentPathfindingNode = 0;
 		Vector3 moveDirection;
+		const std::map<int, bool> raycastCollideMap = { {1,true},{2,true},{4,true},{8,false} };
 	};
 }
 

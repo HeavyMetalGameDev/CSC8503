@@ -28,7 +28,7 @@ namespace NCL::CSC8503{
 
 			Ray ray(gameObject->GetTransform().GetPosition() + Vector3(0,0.3f,0), Vector3(zDir, yDir, -xDir));
 			RayCollision rc;
-			if (worldRef->Raycast(ray, rc, true, gameObject)) {
+			if (worldRef->Raycast(ray, rc, true, raycastCollideMap, gameObject)) {
 				if (((GameObject*)rc.node)->GetPhysicsObject()->IsDynamic()) {
 					grappledObject = (GameObject*)rc.node;
 					isGrapplingStatic = false;
