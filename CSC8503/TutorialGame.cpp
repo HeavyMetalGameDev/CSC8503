@@ -149,7 +149,12 @@ void TutorialGame::UpdateGameAsClient(float dt) {
 	world->GetMainCamera().UpdateCamera(dt);
 
 	UpdateKeys();
-	
+	ClientInputComponent* inp;
+	if (player->TryGetComponent<ClientInputComponent>(inp)) {
+		GamePacket* p;
+		player->GetNetworkObject()->WriteClientPacket(&p,inp);
+		client->SendPacket(*p);
+	}
 
 	world->UpdateWorld(dt);
 	renderer->Update(dt);
@@ -158,6 +163,8 @@ void TutorialGame::UpdateGameAsClient(float dt) {
 }
 
 void TutorialGame::UpdateGameAsServer(float dt) {
+
+	server->UpdateServer();
 
 	//std::cout << "UPDATE SERVER!!!!!\n";
 	if (gameTimer <= 0)SetState(STATE_LOSE);
@@ -228,7 +235,7 @@ void TutorialGame::UpdateGameAsServer(float dt) {
 		server->SendGlobalPacket(*fp);
 	}; });
 
-	server->UpdateServer();
+	
 
 
 	renderer->Render();
@@ -266,80 +273,8 @@ void TutorialGame::UpdateKeys() {
 	if (Window::GetKeyboard()->KeyPressed(KeyCodes::F8)) {
 		world->ShuffleObjects(false);
 	}
-
-	if (lockedObject) {
-		LockedObjectMovement();
-	}
-	else {
-		DebugObjectMovement();
-	}
 }
 
-void TutorialGame::LockedObjectMovement() {
-	Matrix4 view		= world->GetMainCamera().BuildViewMatrix();
-	Matrix4 camWorld	= view.Inverse();
-
-	Vector3 rightAxis = Vector3(camWorld.GetColumn(0)); //view is inverse of model!
-
-	//forward is more tricky -  camera forward is 'into' the screen...
-	//so we can take a guess, and use the cross of straight up, and
-	//the right axis, to hopefully get a vector that's good enough!
-
-	Vector3 fwdAxis = Vector3::Cross(Vector3(0, 1, 0), rightAxis);
-	fwdAxis.y = 0.0f;
-	fwdAxis.Normalise();
-
-
-	if (Window::GetKeyboard()->KeyDown(KeyCodes::UP)) {
-		selectionObject->GetPhysicsObject()->AddForce(fwdAxis);
-	}
-
-	if (Window::GetKeyboard()->KeyDown(KeyCodes::DOWN)) {
-		selectionObject->GetPhysicsObject()->AddForce(-fwdAxis);
-	}
-
-	if (Window::GetKeyboard()->KeyDown(KeyCodes::NEXT)) {
-		selectionObject->GetPhysicsObject()->AddForce(Vector3(0,-10,0));
-	}
-}
-
-void TutorialGame::DebugObjectMovement() {
-//If we've selected an object, we can manipulate it with some key presses
-	if (inSelectionMode && selectionObject) {
-		//Twist the selected object!
-		if (Window::GetKeyboard()->KeyDown(KeyCodes::LEFT)) {
-			selectionObject->GetPhysicsObject()->AddTorque(Vector3(-10, 0, 0));
-		}
-
-		if (Window::GetKeyboard()->KeyDown(KeyCodes::RIGHT)) {
-			selectionObject->GetPhysicsObject()->AddTorque(Vector3(10, 0, 0));
-		}
-
-		if (Window::GetKeyboard()->KeyDown(KeyCodes::NUM7)) {
-			selectionObject->GetPhysicsObject()->AddTorque(Vector3(0, 10, 0));
-		}
-
-		if (Window::GetKeyboard()->KeyDown(KeyCodes::NUM8)) {
-			selectionObject->GetPhysicsObject()->AddTorque(Vector3(0, -10, 0));
-		}
-
-		if (Window::GetKeyboard()->KeyDown(KeyCodes::RIGHT)) {
-			selectionObject->GetPhysicsObject()->AddTorque(Vector3(10, 0, 0));
-		}
-
-		if (Window::GetKeyboard()->KeyDown(KeyCodes::UP)) {
-			selectionObject->GetPhysicsObject()->AddForce(Vector3(0, 0, -10));
-		}
-
-		if (Window::GetKeyboard()->KeyDown(KeyCodes::DOWN)) {
-			selectionObject->GetPhysicsObject()->AddForce(Vector3(0, 0, 10));
-		}
-
-		if (Window::GetKeyboard()->KeyDown(KeyCodes::NUM5)) {
-			selectionObject->GetPhysicsObject()->AddForce(Vector3(0, -10, 0));
-		}
-	}
-}
 
 void TutorialGame::InitCamera() {
 	world->GetMainCamera().SetNearPlane(0.1f);
@@ -408,7 +343,7 @@ void TutorialGame::InitWorldClient() {
 	InitDefaultFloor();
 
 	//STARTING ROOM----------------------------------------------------------------------------------------------------------------------
-	//AddPlayerToWorld(Vector3(80, 0, 10),false,false);
+	AddPlayerToWorld(Vector3(80, 0, 10),true,false);
 	AddOBBCubeToWorld(Vector3(70, -5, 10), Vector3(3, 1, 3), true, false);
 	AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1), 0, true, false);
 	AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f, true, false);
@@ -432,12 +367,14 @@ void TutorialGame::InitWorldClient() {
 
 	world->StartWorld();
 }
+
 void TutorialGame::InitWorldServer() {
 	isClient = false;
 	NetworkBase::Initialise();
 	port = NetworkBase::GetDefaultPort();
-	server = new GameServer(port, 1);
+	server = new GameServer(port, 2);
 	server->RegisterPacketHandler(String_Message, this);
+	server->RegisterPacketHandler(Client_State, this);
 
 	world->ClearAndErase();
 	physics->Clear();
@@ -449,7 +386,7 @@ void TutorialGame::InitWorldServer() {
 	InitDefaultFloor();
 
 	//STARTING ROOM----------------------------------------------------------------------------------------------------------------------
-	//AddPlayerToWorld(Vector3(80, 0, 10),false,false);
+	AddPlayerToWorld(Vector3(80, 0, 10),true,true);
 	AddOBBCubeToWorld(Vector3(70, -5, 10), Vector3(3, 1, 3), 0, true,true);
 	AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1), 0, true, true);
 	AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f, true, true);
@@ -492,11 +429,27 @@ void TutorialGame::ReceivePacket(int type, GamePacket* payload, int source) {
 					}
 				}
 				});
+			break;
 		}
 		}
 	}
 	else {
-
+		switch (type) {
+		case Client_State: {
+			ClientPacket* realPacket = (ClientPacket*)payload;
+			std::cout << realPacket->buttonstates[0]
+				<< realPacket->buttonstates[1]
+				<< realPacket->buttonstates[2]
+				<< realPacket->buttonstates[3]
+				<< realPacket->buttonstates[4]
+				<< realPacket->buttonstates[5]
+				<< realPacket->buttonstates[6]
+				<< realPacket->buttonstates[7] << "  "
+				<< realPacket->camPitch << "  "
+				<< realPacket->camYaw << "\n";
+			break;
+		}
+		}
 	}
 }
 
@@ -964,39 +917,61 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position, bool isNetwo
 		.SetPosition(position);
 
 	character->SetRenderObject(new RenderObject(&character->GetTransform(), capsuleMesh, nullptr, basicShader));
-	character->SetPhysicsObject(new PhysicsObject(&character->GetTransform(), character->GetBoundingVolume(),true,false,PLAYER_LAYER));
-
-	PhysicsObject* co = character->GetPhysicsObject();
-	co->SetInverseMass(inverseMass);
-	co->InitSphereInertia();
-
-	PhysicsMaterial* playerPhys;
-	PhysicsMaterial* bouncyPhys;
-	if (world->TryGetPhysMat("Player", playerPhys))co->SetPhysMat(playerPhys);
-	world->TryGetPhysMat("Bouncy", bouncyPhys);
-
-
-	character->SetCamera(&world->GetMainCamera());
+	
 	character->SetTag("Player");
+	if (!isNetworked) {
+		character->SetPhysicsObject(new PhysicsObject(&character->GetTransform(), character->GetBoundingVolume(), true, false, PLAYER_LAYER));
 
-	MovementApplierComponent* ma = new MovementApplierComponent(&character->GetTransform(), character->GetPhysicsObject(),7000.0f);
-	FirstPersonInputComponent* fps = new FirstPersonInputComponent(&world->GetMainCamera());
-	PlayerInputComponent* pic = new PlayerInputComponent(character, &world->GetMainCamera());
-	PlayerValuesComponent* pvc = new PlayerValuesComponent(world);
+		character->SetCamera(&world->GetMainCamera());
+		PhysicsObject* co = character->GetPhysicsObject();
+		co->SetInverseMass(inverseMass);
+		co->InitSphereInertia();
 
-	GameObject* pickupObject = AddSphereTriggerToWorld(Vector3(-1, 10, 0), 0.8f, isNetworked, isServerSide);
+		PhysicsMaterial* playerPhys;
+		PhysicsMaterial* bouncyPhys;
+		if (world->TryGetPhysMat("Player", playerPhys))co->SetPhysMat(playerPhys);
+		world->TryGetPhysMat("Bouncy", bouncyPhys);
 
-	TriggerComponent* tc = new TriggerComponent();
+		MovementApplierComponent* ma = new MovementApplierComponent(&character->GetTransform(), character->GetPhysicsObject(), 7000.0f);
+		FirstPersonInputComponent* fps = new FirstPersonInputComponent(&world->GetMainCamera());
+		PlayerInputComponent* pic = new PlayerInputComponent(character, &world->GetMainCamera());
+		PlayerValuesComponent* pvc = new PlayerValuesComponent(world);
 
-	pickupObject->AddComponent(tc);
+		GameObject* pickupObject = AddSphereTriggerToWorld(Vector3(-1, 10, 0), 0.8f, isNetworked, isServerSide);
 
-	ObjectPickupComponent* opc = new ObjectPickupComponent(character,pickupObject,&world->GetMainCamera(),tc);
+		TriggerComponent* tc = new TriggerComponent();
 
-	ma->SetInputComponent(fps);
-	character->AddComponent(ma);
-	character->AddComponent(pic);
-	character->AddComponent(opc);
-	character->AddComponent(pvc);
+		pickupObject->AddComponent(tc);
+
+		ObjectPickupComponent* opc = new ObjectPickupComponent(character, pickupObject, &world->GetMainCamera(), tc);
+
+		ma->SetInputComponent(fps);
+		character->AddComponent(ma);
+		character->AddComponent(pic);
+		character->AddComponent(opc);
+		character->AddComponent(pvc);
+
+	}
+	else {
+		character->SetNetworkObject(new NetworkObject(*character, currentNetworkObjectID));
+		currentNetworkObjectID++;
+		if (isServerSide) {
+			character->SetPhysicsObject(new PhysicsObject(&character->GetTransform(), character->GetBoundingVolume(), true, false, PLAYER_LAYER));
+			PhysicsObject* co = character->GetPhysicsObject();
+			co->SetInverseMass(inverseMass);
+			co->InitSphereInertia();
+
+			PhysicsMaterial* playerPhys;
+			PhysicsMaterial* bouncyPhys;
+			if (world->TryGetPhysMat("Player", playerPhys))co->SetPhysMat(playerPhys);
+			world->TryGetPhysMat("Bouncy", bouncyPhys);
+		}
+		else {
+			ClientInputComponent* ci = new ClientInputComponent(character, &world->GetMainCamera(),character->GetNetworkObject());
+			character->AddComponent(ci);
+			player = character;
+		}
+	}
 
 	world->AddGameObject(character);
 

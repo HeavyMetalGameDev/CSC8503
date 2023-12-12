@@ -33,6 +33,7 @@
 #include "KeyComponent.h"
 #include "JumppadComponent.h"
 #include "TreasureReturnPointComponent.h"
+#include "ClientInputComponent.h"
 #include "Assets.h"
 
 #include "PositionConstraint.h"
@@ -79,8 +80,6 @@ namespace NCL {
 
 			bool SelectObject();
 			void MoveSelectedObject();
-			void DebugObjectMovement();
-			void LockedObjectMovement();
 
 			
 
@@ -122,6 +121,7 @@ namespace NCL {
 			float		forceMagnitude;
 
 			GameObject* selectionObject = nullptr;
+			GameObject* player = nullptr;
 
 			Mesh*	capsuleMesh = nullptr;
 			Mesh*	cubeMesh	= nullptr;

@@ -2,6 +2,7 @@
 #include "GameObject.h"
 #include "NetworkBase.h"
 #include "NetworkState.h"
+#include "ClientInputComponent.h"
 
 namespace NCL::CSC8503 {
 	class GameObject;
@@ -29,11 +30,22 @@ namespace NCL::CSC8503 {
 	};
 
 	struct ClientPacket : public GamePacket {
-		int		lastID;
+		int		objectID;
 		char	buttonstates[8];
+		//buttonstates[0] = W
+		//buttonstates[1] = A
+		//buttonstates[2] = S
+		//buttonstates[3] = D
+		//buttonstates[4] = Space
+		//buttonstates[5] = Right Click
+		//buttonstates[6] = Left Click
+		//buttonstates[7] = E
+		float camPitch;
+		float camYaw;
 
 		ClientPacket() {
-			size = sizeof(ClientPacket);
+			type = Client_State;
+			size = sizeof(ClientPacket) - sizeof(GamePacket);
 		}
 	};
 
@@ -53,6 +65,7 @@ namespace NCL::CSC8503 {
 		virtual bool ReadFullPacket(FullPacket& p);
 		virtual bool WriteDeltaPacket(GamePacket** p, int stateID);
 		virtual bool WriteFullPacket(GamePacket** p);
+		virtual bool WriteClientPacket(GamePacket** p,ClientInputComponent* c);
 
 	protected:
 
