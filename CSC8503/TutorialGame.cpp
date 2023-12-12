@@ -57,7 +57,7 @@ void TutorialGame::InitialiseAssets() {
 
 	InitCamera();
 	
-	InitWorld();
+	InitWorldSinglePlayer();
 }
 
 TutorialGame::~TutorialGame()	{
@@ -145,7 +145,7 @@ void TutorialGame::UpdateGame(float dt) {
 
 void TutorialGame::UpdateKeys() {
 	if (Window::GetKeyboard()->KeyPressed(KeyCodes::F1)) {
-		InitWorld(); //We can reset the simulation at any time with F1
+		InitWorldSinglePlayer(); //We can reset the simulation at any time with F1
 		selectionObject = nullptr;
 	}
 
@@ -258,7 +258,7 @@ void TutorialGame::InitCamera() {
 	lockedObject = nullptr;
 }
 
-void TutorialGame::InitWorld() {
+void TutorialGame::InitWorldSinglePlayer() {
 	world->ClearAndErase();
 	physics->Clear();
 	gameTimer = 140;
@@ -293,6 +293,66 @@ void TutorialGame::InitWorld() {
 
 	AddTreasure(Vector3(80, 20, 10));
 
+	world->StartWorld();
+}
+
+
+void TutorialGame::InitWorldClient() {
+	NetworkBase::Initialise();
+	clientReceiver = TestPacketReceiver("Client");
+	port = NetworkBase::GetDefaultPort();
+	client = new GameClient();
+	client->RegisterPacketHandler(String_Message, &serverReceiver);
+	bool canConnect = client->Connect(127, 0, 0, 1, port);
+
+	//for(int i = 0; i < 10000; i++) {
+	//	StringPacket pClient("Client says hello! " + std::to_string(i));
+	//	client->SendPacket(pClient);
+
+	//	client->UpdateClient();
+
+	//	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	//}
+	NetworkBase::Destroy();
+
+
+	world->ClearAndErase();
+	physics->Clear();
+	gameTimer = 140;
+	totalPickups = 0;
+	SetState(STATE_CLIENT);
+
+	InitDefaultFloor();
+
+	world->StartWorld();
+}
+void TutorialGame::InitWorldServer() {
+	NetworkBase::Initialise();
+	serverReceiver= TestPacketReceiver("Server");
+	port = NetworkBase::GetDefaultPort();
+	server = new GameServer(port, 1);
+	server->RegisterPacketHandler(String_Message, &serverReceiver);
+
+	//for (int i = 0; i < 10000; i++) {
+	//	StringPacket pServer("Server says hello! " + std::to_string(i));
+	//	server->SendGlobalPacket(pServer);
+
+	//	server->UpdateServer();
+
+	//	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+	//}
+	NetworkBase::Destroy();
+
+
+	world->ClearAndErase();
+	physics->Clear();
+	gameTimer = 140;
+	totalPickups = 0;
+	SetState(STATE_SERVER);
+
+	//InitMixedGridWorld(15, 15, 3.5f, 3.5f);
+	CreateStaticLevel();
+	InitDefaultFloor();
 	world->StartWorld();
 }
 

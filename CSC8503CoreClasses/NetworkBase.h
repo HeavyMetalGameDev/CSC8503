@@ -90,3 +90,23 @@ protected:
 
 	std::multimap<int, PacketReceiver*> packetHandlers;
 };
+
+class TestPacketReceiver :public PacketReceiver {
+public:
+	TestPacketReceiver(std::string name) {
+		this->name = name;
+	}
+	TestPacketReceiver() {
+	}
+
+	void ReceivePacket(int type, GamePacket* payload, int source) {
+		if (type == String_Message) {
+			StringPacket* realPacket = (StringPacket*)payload;
+			std::string msg = realPacket->GetStringFromData();
+
+			std::cout << name << " recieved message " << msg << "\n";
+		}
+	}
+protected:
+	std::string name;
+};

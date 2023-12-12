@@ -14,7 +14,7 @@ namespace NCL {
 		class GameObject;
 		class Constraint;
 		enum GameState {
-			STATE_MENU,STATE_PLAYING, STATE_WIN, STATE_LOSE
+			STATE_MENU,STATE_PLAYING, STATE_WIN, STATE_LOSE,STATE_SERVER,STATE_CLIENT
 		};
 
 		typedef std::function<void(GameObject*)> GameObjectFunc;

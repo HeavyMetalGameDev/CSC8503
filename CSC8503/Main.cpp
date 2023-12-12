@@ -15,7 +15,6 @@
 #include "NavigationMesh.h"
 
 #include "TutorialGame.h"
-#include "NetworkedGame.h"
 
 #include "PushdownMachine.h"
 
@@ -39,11 +38,71 @@ class PauseScreen : public PushdownState {
 		return PushdownResult::NoChange;
 	}
 };
-class GameScreen : public PushdownState {
+class SinglePlayerGameScreen : public PushdownState {
 	public:
-	GameScreen(TutorialGame* t){ 
+		SinglePlayerGameScreen(TutorialGame* t){
 		g = t;
-		g->InitWorld();
+		g->InitWorldSinglePlayer();
+	}
+
+	PushdownResult OnUpdate(float dt, PushdownState** newState) override {
+		if (dt > 0.1f) {
+			std::cout << "Skipping large time delta" << std::endl;
+			return PushdownResult::NoChange; //must have hit a breakpoint or something to have a 1 second frame time!
+		}
+		if (Window::GetKeyboard()->KeyPressed(KeyCodes::ESCAPE)) {
+			return PushdownResult::Pop;
+		}
+		if (Window::GetKeyboard()->KeyPressed(KeyCodes::P)) {
+			Debug::Print("(P)aused", Vector2(40, 50));
+			g->UpdateGame(dt); //do a game update so the text can display
+			*newState = new PauseScreen();
+			return PushdownResult::Push;
+		}
+		g->UpdateGame(dt);
+		return PushdownResult::NoChange;
+	};
+
+protected:
+	TutorialGame* g;
+	std::vector<Vector3> testNodes;
+};
+
+class ClientGameScreen : public PushdownState {
+public:
+	ClientGameScreen(TutorialGame* t) {
+		g = t;
+		g->InitWorldClient();
+	}
+
+	PushdownResult OnUpdate(float dt, PushdownState** newState) override {
+		if (dt > 0.1f) {
+			std::cout << "Skipping large time delta" << std::endl;
+			return PushdownResult::NoChange; //must have hit a breakpoint or something to have a 1 second frame time!
+		}
+		if (Window::GetKeyboard()->KeyPressed(KeyCodes::ESCAPE)) {
+			return PushdownResult::Pop;
+		}
+		if (Window::GetKeyboard()->KeyPressed(KeyCodes::P)) {
+			Debug::Print("(P)aused", Vector2(40, 50));
+			g->UpdateGame(dt); //do a game update so the text can display
+			*newState = new PauseScreen();
+			return PushdownResult::Push;
+		}
+		g->UpdateGame(dt);
+		return PushdownResult::NoChange;
+	};
+
+protected:
+	TutorialGame* g;
+	std::vector<Vector3> testNodes;
+};
+
+class ServerGameScreen : public PushdownState {
+public:
+	ServerGameScreen(TutorialGame* t) {
+		g = t;
+		g->InitWorldServer();
 	}
 
 	PushdownResult OnUpdate(float dt, PushdownState** newState) override {
@@ -76,11 +135,21 @@ public:
 		g = t;
 	}
 	PushdownResult OnUpdate(float dt, PushdownState** newState) override {
-		Debug::Print("1: Start Game", Vector2(40, 30));
-		Debug::Print("ESCAPE: Exit Game", Vector2(40, 50));
+		Debug::Print("1: Start Game singleplayer", Vector2(40, 30));
+		Debug::Print("2: Start Game as client", Vector2(40, 45));
+		Debug::Print("3: Start Game as server", Vector2(40, 60));
+		Debug::Print("ESCAPE: Exit Game", Vector2(40, 75));
 		g->UpdateGame(0);
 		if (Window::GetKeyboard()->KeyPressed(KeyCodes::NUM1)) {
-			*newState = new GameScreen(g);
+			*newState = new SinglePlayerGameScreen(g);
+			return PushdownResult::Push;
+		}
+		if (Window::GetKeyboard()->KeyPressed(KeyCodes::NUM2)) {
+			*newState = new ClientGameScreen(g);
+			return PushdownResult::Push;
+		}
+		if (Window::GetKeyboard()->KeyPressed(KeyCodes::NUM3)) {
+			*newState = new ServerGameScreen(g);
 			return PushdownResult::Push;
 		}
 		if (Window::GetKeyboard()->KeyPressed(KeyCodes::ESCAPE)) {
@@ -248,23 +317,6 @@ void TestBehaviourTree() {
 	std::cout << "All Done!\n";
 }
 
-class TestPacketReceiver :public PacketReceiver {
-public: 
-	TestPacketReceiver(std::string name) {
-		this->name = name;
-	}
-
-	void ReceivePacket(int type, GamePacket* payload, int source) {
-		if (type == String_Message) {
-			StringPacket* realPacket = (StringPacket*) payload;
-			std::string msg = realPacket->GetStringFromData();
-
-			std::cout << name << " recieved message " << msg << "\n";
-		}
-	}
-protected:
-	std::string name;
-};
 
 void TestNetworking(){
 	NetworkBase::Initialise();

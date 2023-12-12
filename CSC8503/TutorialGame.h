@@ -7,6 +7,10 @@
 #endif
 #include "PhysicsSystem.h"
 
+#include "GameServer.h"
+#include "GameClient.h"
+#include "NetworkObject.h"
+
 #include "StateGameObject.h"
 #include "TestComponent.h"
 #include "PushdownMachine.h"
@@ -42,7 +46,9 @@ namespace NCL {
 		public:
 			TutorialGame();
 			~TutorialGame();
-			void InitWorld();
+			void InitWorldSinglePlayer();
+			void InitWorldClient();
+			void InitWorldServer();
 
 			GameState GetState() { return world->GetState(); }
 			void SetState(GameState s) { world->SetState(s); }
@@ -139,7 +145,15 @@ namespace NCL {
 			GameObject* objClosest = nullptr;
 			float gameTimer = 0;
 			int totalPickups = 0;
+
+			//networking functionality
+			int port;
+			GameServer* server;
+			GameClient* client;
+			TestPacketReceiver serverReceiver;
+			TestPacketReceiver clientReceiver;
 		};
 	}
+
 }
 
