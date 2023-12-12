@@ -487,7 +487,7 @@ void TutorialGame::ReceivePacket(int type, GamePacket* payload, int source) {
 			FullPacket* realPacket = (FullPacket*)payload;
 			world->OperateOnContents([&](GameObject* g) {
 				if (g->GetNetworkObject()) {
-					if (g->GetNetworkObject()->GetNetworkID() == realPacket->objectID) {
+					if (g->GetNetworkObject()->GetNetworkID() == realPacket->objectID-1) {
 						g->GetNetworkObject()->ReadFullPacket(*realPacket);
 					}
 				}
@@ -669,11 +669,12 @@ GameObject* TutorialGame::AddTreasurePoint(const Vector3& position, bool isNetwo
 	trigger->GetTransform()
 		.SetScale(triggerSize)
 		.SetPosition(position);
-
+	trigger->SetRenderObject(new RenderObject(&trigger->GetTransform(), cubeMesh, basicTex, basicShader));
+	trigger->GetRenderObject()->SetColour({ 1,1,0,0.5f });
 	if (!isNetworked || isServerSide) {
-		trigger->SetRenderObject(new RenderObject(&trigger->GetTransform(), cubeMesh, basicTex, basicShader));
+
 		trigger->SetPhysicsObject(new PhysicsObject(&trigger->GetTransform(), trigger->GetBoundingVolume(), true, true, PICKUP_SPHERE_LAYER));
-		trigger->GetRenderObject()->SetColour({ 1,1,0,0.5f });
+
 
 		TreasureReturnPointComponent* trp = new TreasureReturnPointComponent(world);
 		trigger->AddComponent(trp);
