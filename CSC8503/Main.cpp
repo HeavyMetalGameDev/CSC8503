@@ -76,20 +76,10 @@ public:
 	}
 
 	PushdownResult OnUpdate(float dt, PushdownState** newState) override {
-		if (dt > 0.1f) {
-			std::cout << "Skipping large time delta" << std::endl;
-			return PushdownResult::NoChange; //must have hit a breakpoint or something to have a 1 second frame time!
-		}
 		if (Window::GetKeyboard()->KeyPressed(KeyCodes::ESCAPE)) {
 			return PushdownResult::Pop;
 		}
-		if (Window::GetKeyboard()->KeyPressed(KeyCodes::P)) {
-			Debug::Print("(P)aused", Vector2(40, 50));
-			g->UpdateGame(dt); //do a game update so the text can display
-			*newState = new PauseScreen();
-			return PushdownResult::Push;
-		}
-		g->UpdateGame(dt);
+		g->UpdateGameAsClient(dt);
 		return PushdownResult::NoChange;
 	};
 
@@ -115,11 +105,11 @@ public:
 		}
 		if (Window::GetKeyboard()->KeyPressed(KeyCodes::P)) {
 			Debug::Print("(P)aused", Vector2(40, 50));
-			g->UpdateGame(dt); //do a game update so the text can display
+			g->UpdateGameAsServer(dt); //do a game update so the text can display
 			*newState = new PauseScreen();
 			return PushdownResult::Push;
 		}
-		g->UpdateGame(dt);
+		g->UpdateGameAsServer(dt);
 		return PushdownResult::NoChange;
 	};
 
@@ -317,37 +307,6 @@ void TestBehaviourTree() {
 	std::cout << "All Done!\n";
 }
 
-
-void TestNetworking(){
-	NetworkBase::Initialise();
-
-	TestPacketReceiver serverReceiver("Server");
-	TestPacketReceiver clientReceiver("Client");
-
-	int port = NetworkBase::GetDefaultPort();
-
-	GameServer* server = new GameServer(port, 1);
-	GameClient* client = new GameClient();
-
-	server->RegisterPacketHandler(String_Message, &serverReceiver);
-	client->RegisterPacketHandler(String_Message, &clientReceiver);
-
-	bool canConnect = client->Connect(127, 0, 0, 1, port);
-
-	for (int i = 0; i < 100; i++) {
-		StringPacket pServer("Server says hello! " + std::to_string(i));
-		server->SendGlobalPacket(pServer);
-
-		StringPacket pClient("Client says hello! " + std::to_string(i));
-		client->SendPacket(pClient);
-
-		server->UpdateServer();
-		client->UpdateClient();
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
-	}
-	NetworkBase::Destroy();
-}
 
 /*
 

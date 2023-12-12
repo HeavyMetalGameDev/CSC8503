@@ -58,6 +58,8 @@ namespace NCL::CSC8503 {
 			return networkObject;
 		}
 
+		void SetNetworkObject(NetworkObject* n) { networkObject = n; }
+
 		void SetRenderObject(RenderObject* newObject) {
 			renderObject = newObject;
 		}

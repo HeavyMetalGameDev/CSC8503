@@ -143,6 +143,98 @@ void TutorialGame::UpdateGame(float dt) {
 	Debug::UpdateRenderables(dt);
 }
 
+void TutorialGame::UpdateGameAsClient(float dt) {
+	client->UpdateClient();
+
+	world->GetMainCamera().UpdateCamera(dt);
+
+	UpdateKeys();
+	
+
+	world->UpdateWorld(dt);
+	renderer->Update(dt);
+	renderer->Render();
+	Debug::UpdateRenderables(dt);
+}
+
+void TutorialGame::UpdateGameAsServer(float dt) {
+
+	//std::cout << "UPDATE SERVER!!!!!\n";
+	if (gameTimer <= 0)SetState(STATE_LOSE);
+	switch (GetState()) {
+	case STATE_MENU:
+		renderer->Update(dt);
+		renderer->Render();
+		return;
+		break;
+	case STATE_PLAYING:
+		break;
+
+	case STATE_WIN:
+		Debug::Print("WIN!!!!!!!!!!!", { 40,50 }, Debug::GREEN);
+		renderer->Update(dt);
+		renderer->Render();
+		gameTimer = 0.1f;
+		return;
+		break;
+	case STATE_LOSE:
+		Debug::Print("LOSE!!!!!!!!!!!", { 40,50 }, Debug::RED);
+		renderer->Update(dt);
+		renderer->Render();
+		gameTimer = 0.1f;
+		return;
+		break;
+	}
+
+	gameTimer -= dt;
+	Debug::Print("Time:" + std::to_string(((int)gameTimer)), { 5, 5 });
+	Debug::Print("/" + std::to_string(totalPickups), Vector2(90, 10), Debug::YELLOW);
+	world->GetMainCamera().UpdateCamera(dt);
+
+	SelectObject();
+	MoveSelectedObject();
+	UpdateKeys();
+
+
+	RayCollision closestCollision;
+	if (Window::GetKeyboard()->KeyPressed(KeyCodes::K) && selectionObject) {
+		Vector3 rayPos;
+		Vector3 rayDir;
+
+		rayDir = selectionObject->GetTransform().GetOrientation() * Vector3(0, 0, -1);
+
+		rayPos = selectionObject->GetTransform().GetPosition();
+
+		Ray r = Ray(rayPos, rayDir);
+
+		if (world->Raycast(r, closestCollision, true, selectionObject)) {
+			if (objClosest) {
+				objClosest->GetRenderObject()->SetColour(Vector4(1, 1, 1, 1));
+			}
+			objClosest = (GameObject*)closestCollision.node;
+
+			objClosest->GetRenderObject()->SetColour(Vector4(1, 0, 1, 1));
+		}
+	}
+
+	world->UpdateWorld(dt);
+	renderer->Update(dt);
+	physics->Update(dt);
+
+	world->OperateOnContents([&](GameObject* g)->void
+		{if (g->GetNetworkObject()) {
+		GamePacket* fp;
+		g->GetNetworkObject()->WriteFullPacket(&fp);
+		server->SendGlobalPacket(*fp);
+	}; });
+
+	server->UpdateServer();
+
+
+	renderer->Render();
+	Debug::UpdateRenderables(dt);
+}
+
 void TutorialGame::UpdateKeys() {
 	if (Window::GetKeyboard()->KeyPressed(KeyCodes::F1)) {
 		InitWorldSinglePlayer(); //We can reset the simulation at any time with F1
@@ -266,55 +358,45 @@ void TutorialGame::InitWorldSinglePlayer() {
 	SetState(STATE_PLAYING);
 
 	//InitMixedGridWorld(15, 15, 3.5f, 3.5f);
-	CreateStaticLevel();
+	CreateStaticLevel(false, false);
 	InitDefaultFloor();
-	//testStateObject = AddStateObjectToWorld(Vector3(0, 10, 0));
 	
 	//STARTING ROOM----------------------------------------------------------------------------------------------------------------------
-	AddPlayerToWorld(Vector3(80, 0, 10));
-	AddOBBCubeToWorld(Vector3(70, -5, 10),Vector3(3,1,3));
-	AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1),0);
-	AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f);
-	AddKeyDoorPairToWorld(Vector3(70, 3.5f, 10), Vector3(10, 0, 20), Debug::YELLOW);
-	AddTreasurePoint(Vector3(85, -3, 10));
+	//AddPlayerToWorld(Vector3(80, 0, 10),false,false);
+	AddOBBCubeToWorld(Vector3(70, -5, 10),Vector3(3,1,3), false, false);
+	AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1),0, false, false);
+	AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f, false, false);
+	AddKeyDoorPairToWorld(Vector3(70, 3.5f, 10), Vector3(10, 0, 20), Debug::YELLOW, false, false);
+	AddTreasurePoint(Vector3(85, -3, 10), false, false);
 
-	AddCapsuleToWorld(Vector3(80, 0, 10), 1,0.7f);
-	AddRopeToWorld(Vector3(50, 5, 10));
-	AddCubeWallToWorld(Vector3(30, -4, 6));
-	AddJumppad(Vector3(20, -5, 40));
+	AddCapsuleToWorld(Vector3(80, 0, 10), 1,0.7f, false, false);
+	AddRopeToWorld(Vector3(50, 5, 10), false, false);
+	AddCubeWallToWorld(Vector3(30, -4, 6), false, false);
+	AddJumppad(Vector3(20, -5, 40), false, false);
 	//AddSphereToWorld(Vector3(1, 0, 0), .3f, 0.7f);
 
-	std::vector<Vector3> enemyPath;
+	/*std::vector<Vector3> enemyPath;
 	enemyPath.emplace_back(Vector3(60, 0, 40));
 	enemyPath.emplace_back(Vector3(60, 0, 60));
-	AddEnemyToWorld(Vector3(60, 0, 40), enemyPath);
-	AddGrappleUnlockerToWorld(Vector3(80, 0, 80));
+	AddEnemyToWorld(Vector3(60, 0, 40), enemyPath, false, false);
+	AddGrappleUnlockerToWorld(Vector3(80, 0, 80), false, false);*/
 
 
-	AddTreasure(Vector3(80, 20, 10));
+	AddTreasure(Vector3(80, 20, 10), false, false);
 
 	world->StartWorld();
 }
 
 
 void TutorialGame::InitWorldClient() {
+	
+	isClient = true;
 	NetworkBase::Initialise();
-	clientReceiver = TestPacketReceiver("Client");
 	port = NetworkBase::GetDefaultPort();
 	client = new GameClient();
-	client->RegisterPacketHandler(String_Message, &serverReceiver);
+	client->RegisterPacketHandler(String_Message, this);
+	client->RegisterPacketHandler(Full_State, this);
 	bool canConnect = client->Connect(127, 0, 0, 1, port);
-
-	//for(int i = 0; i < 10000; i++) {
-	//	StringPacket pClient("Client says hello! " + std::to_string(i));
-	//	client->SendPacket(pClient);
-
-	//	client->UpdateClient();
-
-	//	std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	//}
-	NetworkBase::Destroy();
-
 
 	world->ClearAndErase();
 	physics->Clear();
@@ -322,27 +404,40 @@ void TutorialGame::InitWorldClient() {
 	totalPickups = 0;
 	SetState(STATE_CLIENT);
 
+	CreateStaticLevel(true, false);
 	InitDefaultFloor();
+
+	//STARTING ROOM----------------------------------------------------------------------------------------------------------------------
+	//AddPlayerToWorld(Vector3(80, 0, 10),false,false);
+	AddOBBCubeToWorld(Vector3(70, -5, 10), Vector3(3, 1, 3), true, false);
+	AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1), 0, true, false);
+	AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f, true, false);
+	AddKeyDoorPairToWorld(Vector3(70, 3.5f, 10), Vector3(10, 0, 20), Debug::YELLOW, true, false);
+	AddTreasurePoint(Vector3(85, -3, 10), true, false);
+
+	AddCapsuleToWorld(Vector3(80, 0, 10), 1, 0.7f, true, false);
+	AddRopeToWorld(Vector3(50, 5, 10), true, false);
+	AddCubeWallToWorld(Vector3(30, -4, 6), true, false);
+	AddJumppad(Vector3(20, -5, 40), true, false);
+	//AddSphereToWorld(Vector3(1, 0, 0), .3f, 0.7f);
+
+	/*std::vector<Vector3> enemyPath;
+	enemyPath.emplace_back(Vector3(60, 0, 40));
+	enemyPath.emplace_back(Vector3(60, 0, 60));
+	AddEnemyToWorld(Vector3(60, 0, 40), enemyPath, false, false);
+	AddGrappleUnlockerToWorld(Vector3(80, 0, 80), false, false);*/
+
+
+	AddTreasure(Vector3(80, 20, 10), true, false);
 
 	world->StartWorld();
 }
 void TutorialGame::InitWorldServer() {
+	isClient = false;
 	NetworkBase::Initialise();
-	serverReceiver= TestPacketReceiver("Server");
 	port = NetworkBase::GetDefaultPort();
 	server = new GameServer(port, 1);
-	server->RegisterPacketHandler(String_Message, &serverReceiver);
-
-	//for (int i = 0; i < 10000; i++) {
-	//	StringPacket pServer("Server says hello! " + std::to_string(i));
-	//	server->SendGlobalPacket(pServer);
-
-	//	server->UpdateServer();
-
-	//	std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	//}
-	NetworkBase::Destroy();
-
+	server->RegisterPacketHandler(String_Message, this);
 
 	world->ClearAndErase();
 	physics->Clear();
@@ -350,10 +445,59 @@ void TutorialGame::InitWorldServer() {
 	totalPickups = 0;
 	SetState(STATE_SERVER);
 
-	//InitMixedGridWorld(15, 15, 3.5f, 3.5f);
-	CreateStaticLevel();
+	CreateStaticLevel(true, true);
 	InitDefaultFloor();
+
+	//STARTING ROOM----------------------------------------------------------------------------------------------------------------------
+	//AddPlayerToWorld(Vector3(80, 0, 10),false,false);
+	AddOBBCubeToWorld(Vector3(70, -5, 10), Vector3(3, 1, 3), 0, true,true);
+	AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1), 0, true, true);
+	AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f, true, true);
+	AddKeyDoorPairToWorld(Vector3(70, 3.5f, 10), Vector3(10, 0, 20), Debug::YELLOW, true, true);
+	AddTreasurePoint(Vector3(85, -3, 10), true, true);
+
+	AddCapsuleToWorld(Vector3(80, 0, 10), 1, 0.7f, true, true);
+	AddRopeToWorld(Vector3(50, 5, 10), true, true);
+	AddCubeWallToWorld(Vector3(30, -4, 6), true, true);
+	AddJumppad(Vector3(20, -5, 40), true, true);
+	//AddSphereToWorld(Vector3(1, 0, 0), .3f, 0.7f);
+
+	/*std::vector<Vector3> enemyPath;
+	enemyPath.emplace_back(Vector3(60, 0, 40));
+	enemyPath.emplace_back(Vector3(60, 0, 60));
+	AddEnemyToWorld(Vector3(60, 0, 40), enemyPath, false, false);
+	AddGrappleUnlockerToWorld(Vector3(80, 0, 80), false, false);*/
+
+
+	AddTreasure(Vector3(80, 20, 10), true, true);
 	world->StartWorld();
+}
+
+void TutorialGame::ReceivePacket(int type, GamePacket* payload, int source) {
+	if (isClient) {
+		switch (type) {
+		case String_Message: {
+			StringPacket* realPacket = (StringPacket*)payload;
+			std::string msg = realPacket->GetStringFromData();
+
+			std::cout << " recieved message " << msg << "\n";
+			break;
+		}
+		case Full_State: {
+			FullPacket* realPacket = (FullPacket*)payload;
+			world->OperateOnContents([&](GameObject* g) {
+				if (g->GetNetworkObject()) {
+					if (g->GetNetworkObject()->GetNetworkID() == realPacket->objectID) {
+						g->GetNetworkObject()->ReadFullPacket(*realPacket);
+					}
+				}
+				});
+		}
+		}
+	}
+	else {
+
+	}
 }
 
 void TutorialGame::BridgeConstraintTest() {
@@ -382,7 +526,7 @@ void TutorialGame::BridgeConstraintTest() {
 	world->AddConstraint(constraint);
 }
 
-void TutorialGame::AddRopeToWorld(const Vector3& position) {
+void TutorialGame::AddRopeToWorld(const Vector3& position, bool isNetworked, bool isServerSide) {
 	Vector3 cubeSize = Vector3(0.2f, 0.3f, 0.2f);
 
 	float invCubeMass = 0.4f;
@@ -397,11 +541,13 @@ void TutorialGame::AddRopeToWorld(const Vector3& position) {
 	GameObject* previous = start;
 
 	for (int i = 0; i < numLinks; i++) {
-		GameObject* block = AddCubeToWorld(startPos + Vector3(0, (i + 1) * cubeDistance, 0), cubeSize, invCubeMass);
+		GameObject* block = AddCubeToWorld(startPos + Vector3(0, (i + 1) * cubeDistance, 0), cubeSize, invCubeMass,isNetworked,isServerSide);
 
-		PositionConstraint* constraint = new PositionConstraint(previous, block, maxDistance);
-		world->AddConstraint(constraint);
-		previous = block;
+		if (!isNetworked || isServerSide) {
+			PositionConstraint* constraint = new PositionConstraint(previous, block, maxDistance);
+			world->AddConstraint(constraint);
+			previous = block;
+		}
 	}
 }
 
@@ -442,63 +588,77 @@ rigid body representation. This and the cube function will let you build a lot o
 physics worlds. You'll probably need another function for the creation of OBB cubes too.
 
 */
-GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius, float inverseMass) {
+GameObject* TutorialGame::AddSphereToWorld(const Vector3& position, float radius, float inverseMass, bool isNetworked, bool isServerSide) {
 	GameObject* sphere = new GameObject();
 	sphere->SetTag("Sphere");
 
 	Vector3 sphereSize = Vector3(radius, radius, radius);
-	SphereVolume* volume = new SphereVolume(radius);
-	sphere->SetBoundingVolume((CollisionVolume*)volume);
 
 	sphere->GetTransform()
 		.SetScale(sphereSize)
 		.SetPosition(position);
 
 	sphere->SetRenderObject(new RenderObject(&sphere->GetTransform(), sphereMesh, basicTex, basicShader));
-	sphere->SetPhysicsObject(new PhysicsObject(&sphere->GetTransform(), sphere->GetBoundingVolume()));
+	if (!isNetworked || isServerSide) {
+		SphereVolume* volume = new SphereVolume(radius);
+		sphere->SetBoundingVolume((CollisionVolume*)volume);
+		sphere->SetPhysicsObject(new PhysicsObject(&sphere->GetTransform(), sphere->GetBoundingVolume()));
 
-	PhysicsObject* so = sphere->GetPhysicsObject();
-	so->SetInverseMass(inverseMass);
-	so->InitSphereInertia();
+		PhysicsObject* so = sphere->GetPhysicsObject();
+		so->SetInverseMass(inverseMass);
+		so->InitSphereInertia();
 
-	PhysicsMaterial* spherePhys;
-	if (world->TryGetPhysMat("Bouncy", spherePhys))so->SetPhysMat(spherePhys);
-
+		PhysicsMaterial* spherePhys;
+		if (world->TryGetPhysMat("Bouncy", spherePhys))so->SetPhysMat(spherePhys);
+	}
+	if (isNetworked) {
+		sphere->SetNetworkObject(new NetworkObject(*sphere, currentNetworkObjectID));
+		currentNetworkObjectID++;
+	}
 	world->AddGameObject(sphere);
 
 	return sphere;
 }
 
-GameObject* TutorialGame::AddTreasure(const Vector3& position) {
+GameObject* TutorialGame::AddTreasure(const Vector3& position, bool isNetworked, bool isServerSide) {
 	float radius = 1.0f;
 	GameObject* treasure = new GameObject();
 	treasure->SetTag("Treasure");
 
 	Vector3 treasureSize = Vector3(radius, radius, radius);
-	SphereVolume* volume = new SphereVolume(radius);
-	treasure->SetBoundingVolume((CollisionVolume*)volume);
+
 
 	treasure->GetTransform()
 		.SetScale(treasureSize)
 		.SetPosition(position);
 
 	treasure->SetRenderObject(new RenderObject(&treasure->GetTransform(), gooseMesh, basicTex, basicShader));
-	treasure->SetPhysicsObject(new PhysicsObject(&treasure->GetTransform(), treasure->GetBoundingVolume()));
+	
 	treasure->GetRenderObject()->SetColour(Debug::YELLOW);
 
-	PhysicsObject* so = treasure->GetPhysicsObject();
-	so->SetInverseMass(0.2f);
-	so->InitSphereInertia();
+	if (!isNetworked || isServerSide) {
+		SphereVolume* volume = new SphereVolume(radius);
+		treasure->SetBoundingVolume((CollisionVolume*)volume);
+		treasure->SetPhysicsObject(new PhysicsObject(&treasure->GetTransform(), treasure->GetBoundingVolume()));
+		PhysicsObject* so = treasure->GetPhysicsObject();
+		so->SetInverseMass(0.2f);
+		so->InitSphereInertia();
 
-	PhysicsMaterial* treasurePhys;
-	if (world->TryGetPhysMat("Standard", treasurePhys))so->SetPhysMat(treasurePhys);
+		PhysicsMaterial* treasurePhys;
+		if (world->TryGetPhysMat("Standard", treasurePhys))so->SetPhysMat(treasurePhys);
+
+	}
+	if (isNetworked) {
+		treasure->SetNetworkObject(new NetworkObject(*treasure, currentNetworkObjectID));
+		currentNetworkObjectID++;
+	}
 
 	world->AddGameObject(treasure);
 
 	return treasure;
 }
 
-GameObject* TutorialGame::AddTreasurePoint(const Vector3& position) {
+GameObject* TutorialGame::AddTreasurePoint(const Vector3& position, bool isNetworked, bool isServerSide) {
 	GameObject* trigger = new GameObject();
 	trigger->SetTag("TreasurePoint");
 
@@ -510,12 +670,18 @@ GameObject* TutorialGame::AddTreasurePoint(const Vector3& position) {
 		.SetScale(triggerSize)
 		.SetPosition(position);
 
-	trigger->SetRenderObject(new RenderObject(&trigger->GetTransform(), cubeMesh, basicTex, basicShader));
-	trigger->SetPhysicsObject(new PhysicsObject(&trigger->GetTransform(), trigger->GetBoundingVolume(), true, true, PICKUP_SPHERE_LAYER));
-	trigger->GetRenderObject()->SetColour({ 1,1,0,0.5f });
+	if (!isNetworked || isServerSide) {
+		trigger->SetRenderObject(new RenderObject(&trigger->GetTransform(), cubeMesh, basicTex, basicShader));
+		trigger->SetPhysicsObject(new PhysicsObject(&trigger->GetTransform(), trigger->GetBoundingVolume(), true, true, PICKUP_SPHERE_LAYER));
+		trigger->GetRenderObject()->SetColour({ 1,1,0,0.5f });
 
-	TreasureReturnPointComponent* trp = new TreasureReturnPointComponent(world);
-	trigger->AddComponent(trp);
+		TreasureReturnPointComponent* trp = new TreasureReturnPointComponent(world);
+		trigger->AddComponent(trp);
+	}
+	if (isNetworked) {
+		trigger->SetNetworkObject(new NetworkObject(*trigger, currentNetworkObjectID));
+		currentNetworkObjectID++;
+	}
 
 	//PhysicsMaterial* spherePhys;
 	//if (world->TryGetPhysMat("Bouncy", spherePhys))so->SetPhysMat(spherePhys);
@@ -525,7 +691,7 @@ GameObject* TutorialGame::AddTreasurePoint(const Vector3& position) {
 	return trigger;
 }
 
-GameObject* TutorialGame::AddSphereTriggerToWorld(const Vector3& position, float radius) {
+GameObject* TutorialGame::AddSphereTriggerToWorld(const Vector3& position, float radius, bool isNetworked, bool isServerSide) {
 	GameObject* sphere = new GameObject();
 	sphere->SetTag("SphereTrigger");
 
@@ -537,24 +703,24 @@ GameObject* TutorialGame::AddSphereTriggerToWorld(const Vector3& position, float
 		.SetScale(sphereSize)
 		.SetPosition(position);
 
-	//sphere->SetRenderObject(new RenderObject(&sphere->GetTransform(), sphereMesh, basicTex, basicShader));
-	sphere->SetPhysicsObject(new PhysicsObject(&sphere->GetTransform(), sphere->GetBoundingVolume(),true,true,PICKUP_SPHERE_LAYER));
+	if (!isNetworked || isServerSide) {
+		//sphere->SetRenderObject(new RenderObject(&sphere->GetTransform(), sphereMesh, basicTex, basicShader));
+		sphere->SetPhysicsObject(new PhysicsObject(&sphere->GetTransform(), sphere->GetBoundingVolume(), true, true, PICKUP_SPHERE_LAYER));
 
-	//PhysicsMaterial* spherePhys;
-	//if (world->TryGetPhysMat("Bouncy", spherePhys))so->SetPhysMat(spherePhys);
+		//PhysicsMaterial* spherePhys;
+		//if (world->TryGetPhysMat("Bouncy", spherePhys))so->SetPhysMat(spherePhys);
+	}
 
 	world->AddGameObject(sphere);
 
 	return sphere;
 }
 
-GameObject* TutorialGame::AddPointPickupToWorld(const Vector3& position, int points) {
+GameObject* TutorialGame::AddPointPickupToWorld(const Vector3& position, int points, bool isNetworked, bool isServerSide) {
 	GameObject* sphere = new GameObject();
 	sphere->SetTag("PointPickup");
 
 	Vector3 sphereSize = Vector3(.5f, .5f, .5f);
-	SphereVolume* volume = new SphereVolume(.5f);
-	sphere->SetBoundingVolume((CollisionVolume*)volume);
 
 	sphere->GetTransform()
 		.SetScale(sphereSize*0.2f)
@@ -565,14 +731,20 @@ GameObject* TutorialGame::AddPointPickupToWorld(const Vector3& position, int poi
 		.SetPosition(position);
 
 	sphere->SetRenderObject(new RenderObject(&sphere->GetTransform(), coinMesh, basicTex, basicShader));
-	sphere->SetPhysicsObject(new PhysicsObject(&sphere->GetTransform(), sphere->GetBoundingVolume(), false, true,STATIC_LAYER));
 	sphere->GetRenderObject()->SetColour(Debug::YELLOW);
 
-	PointPickupComponent* ppc = new PointPickupComponent(world,sphere, points);
-	sphere->AddComponent(ppc);
+	if (!isNetworked || isServerSide) {
+		SphereVolume* volume = new SphereVolume(.5f);
+		sphere->SetBoundingVolume((CollisionVolume*)volume);
+		sphere->SetPhysicsObject(new PhysicsObject(&sphere->GetTransform(), sphere->GetBoundingVolume(), false, true, STATIC_LAYER));
+		PointPickupComponent* ppc = new PointPickupComponent(world, sphere, points);
+		sphere->AddComponent(ppc);
+	}
+	if (isNetworked) {
+		sphere->SetNetworkObject(new NetworkObject(*sphere, currentNetworkObjectID));
+		currentNetworkObjectID++;
+	}
 
-	//PhysicsMaterial* spherePhys;
-	//if (world->TryGetPhysMat("Bouncy", spherePhys))so->SetPhysMat(spherePhys);
 
 	world->AddGameObject(sphere);
 
@@ -580,7 +752,7 @@ GameObject* TutorialGame::AddPointPickupToWorld(const Vector3& position, int poi
 
 	return sphere;
 }
-GameObject* TutorialGame::AddGrappleUnlockerToWorld(const Vector3& position) {
+GameObject* TutorialGame::AddGrappleUnlockerToWorld(const Vector3& position, bool isNetworked, bool isServerSide) {
 	GameObject* sphere = new GameObject();
 	sphere->SetTag("GrapplePickup");
 
@@ -593,20 +765,22 @@ GameObject* TutorialGame::AddGrappleUnlockerToWorld(const Vector3& position) {
 		.SetPosition(position);
 
 	sphere->SetRenderObject(new RenderObject(&sphere->GetTransform(), pickupMesh, basicTex, basicShader));
-	sphere->SetPhysicsObject(new PhysicsObject(&sphere->GetTransform(), sphere->GetBoundingVolume(), false, true,STATIC_LAYER));
-	sphere->GetRenderObject()->SetColour(Debug::GREEN);
+	if (!isNetworked || isServerSide) {
+		sphere->SetPhysicsObject(new PhysicsObject(&sphere->GetTransform(), sphere->GetBoundingVolume(), false, true, STATIC_LAYER));
+		sphere->GetRenderObject()->SetColour(Debug::GREEN);
 
-	UnlockGrappleComponent* ug = new UnlockGrappleComponent();
-	sphere->AddComponent(ug);
+		UnlockGrappleComponent* ug = new UnlockGrappleComponent();
+		sphere->AddComponent(ug);
 
-	//PhysicsMaterial* spherePhys;
-	//if (world->TryGetPhysMat("Bouncy", spherePhys))so->SetPhysMat(spherePhys);
+		//PhysicsMaterial* spherePhys;
+		//if (world->TryGetPhysMat("Bouncy", spherePhys))so->SetPhysMat(spherePhys);
+	}
 
 	world->AddGameObject(sphere);
 
 	return sphere;
 }
-GameObject* TutorialGame::AddJumppad(const Vector3& position) {
+GameObject* TutorialGame::AddJumppad(const Vector3& position, bool isNetworked, bool isServerSide) {
 	GameObject* jp = new GameObject();
 	jp->SetTag("Jumppad");
 
@@ -619,44 +793,56 @@ GameObject* TutorialGame::AddJumppad(const Vector3& position) {
 		.SetPosition(position);
 
 	jp->SetRenderObject(new RenderObject(&jp->GetTransform(), cubeMesh, basicTex, basicShader));
-	jp->SetPhysicsObject(new PhysicsObject(&jp->GetTransform(), jp->GetBoundingVolume(), false, true, STATIC_LAYER));
 	jp->GetRenderObject()->SetColour(Debug::MAGENTA);
+	if (!isNetworked || isServerSide) {
+		jp->SetPhysicsObject(new PhysicsObject(&jp->GetTransform(), jp->GetBoundingVolume(), false, true, STATIC_LAYER));
 
-	JumppadComponent* jpc = new JumppadComponent();
-	//PhysicsMaterial* spherePhys;
-	//if (world->TryGetPhysMat("Bouncy", spherePhys))so->SetPhysMat(spherePhys);
-	jp->AddComponent(jpc);
+
+		JumppadComponent* jpc = new JumppadComponent();
+		//PhysicsMaterial* spherePhys;
+		//if (world->TryGetPhysMat("Bouncy", spherePhys))so->SetPhysMat(spherePhys);
+		jp->AddComponent(jpc);
+	}
+
 	world->AddGameObject(jp);
 
 	return jp;
 }
-GameObject* TutorialGame::AddCapsuleToWorld(const Vector3& position, float size, float inverseMass) {
+
+GameObject* TutorialGame::AddCapsuleToWorld(const Vector3& position, float size, float inverseMass, bool isNetworked, bool isServerSide) {
 	GameObject* capsule = new GameObject();
 	capsule->SetTag("Capsule");
 
-	CapsuleVolume* volume = new CapsuleVolume(size*0.5f,size*0.5f);
-	capsule->SetBoundingVolume((CollisionVolume*)volume);
 
 	capsule->GetTransform()
 		.SetScale(Vector3(size, size, size))
 		.SetPosition(position);
 
 	capsule->SetRenderObject(new RenderObject(&capsule->GetTransform(), capsuleMesh, basicTex, basicShader));
-	capsule->SetPhysicsObject(new PhysicsObject(&capsule->GetTransform(), capsule->GetBoundingVolume()));
 
-	PhysicsObject* co = capsule->GetPhysicsObject();
-	co->SetInverseMass(inverseMass);
-	co->InitSphereInertia();
+	if (!isNetworked || isServerSide) {
+		CapsuleVolume* volume = new CapsuleVolume(size * 0.5f, size * 0.5f);
+		capsule->SetBoundingVolume((CollisionVolume*)volume);
+		capsule->SetPhysicsObject(new PhysicsObject(&capsule->GetTransform(), capsule->GetBoundingVolume()));
 
-	PhysicsMaterial* capPhys;
-	if (world->TryGetPhysMat("Standard", capPhys))co->SetPhysMat(capPhys);
+		PhysicsObject* co = capsule->GetPhysicsObject();
+		co->SetInverseMass(inverseMass);
+		co->InitSphereInertia();
+
+		PhysicsMaterial* capPhys;
+		if (world->TryGetPhysMat("Standard", capPhys))co->SetPhysMat(capPhys);
+	}
+	if (isNetworked) {
+		capsule->SetNetworkObject(new NetworkObject(*capsule, currentNetworkObjectID));
+		currentNetworkObjectID++;
+	}
 
 	world->AddGameObject(capsule);
 
 	return capsule;
 }
 
-GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass) {
+GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass, bool isNetworked, bool isServerSide) {
 	GameObject* cube = new GameObject();
 
 	AABBVolume* volume = new AABBVolume(dimensions);
@@ -668,35 +854,43 @@ GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimens
 
 
 	cube->SetRenderObject(new RenderObject(&cube->GetTransform(), cubeMesh, basicTex, basicShader));
-	if (inverseMass == 0) {
-		cube->SetPhysicsObject(new PhysicsObject(&cube->GetTransform(), cube->GetBoundingVolume(), false, false, STATIC_LAYER));
+
+	if (!isNetworked || isServerSide) {
+		if (inverseMass == 0) {
+			cube->SetPhysicsObject(new PhysicsObject(&cube->GetTransform(), cube->GetBoundingVolume(), false, false, STATIC_LAYER));
+		}
+		else {
+			cube->SetPhysicsObject(new PhysicsObject(&cube->GetTransform(), cube->GetBoundingVolume()));
+		}
+
+		PhysicsObject* co = cube->GetPhysicsObject();
+
+		co->InitCubeInertia();
+		co->SetInverseMass(inverseMass);
+
+		PhysicsMaterial* cubePhys;
+		if (world->TryGetPhysMat("Standard", cubePhys))co->SetPhysMat(cubePhys);
 	}
-	else {
-		cube->SetPhysicsObject(new PhysicsObject(&cube->GetTransform(), cube->GetBoundingVolume()));
+	if (isNetworked) {
+		cube->SetNetworkObject(new NetworkObject(*cube, currentNetworkObjectID));
+		currentNetworkObjectID++;
 	}
-
-	PhysicsObject* co = cube->GetPhysicsObject();
-
-	co->InitCubeInertia();
-	co->SetInverseMass(inverseMass);
-
-	PhysicsMaterial* cubePhys;
-	if (world->TryGetPhysMat("Standard", cubePhys))co->SetPhysMat(cubePhys);
-
 	world->AddGameObject(cube);
 
 	return cube;
 }
-void TutorialGame::AddCubeWallToWorld(const Vector3& position) {
+
+void TutorialGame::AddCubeWallToWorld(const Vector3& position, bool isNetworked, bool isServerSide) {
 	for (int x = 0; x < 5; x++) {
 		for (int y = 0; y < 5; y++) {
 			Vector3 cubePos = Vector3(position.x, position.y + y*2, position.z + x*2);
-			AddCubeToWorld(cubePos, Vector3(0.98f, 0.98f, 0.98f), 0.5f);
+			AddCubeToWorld(cubePos, Vector3(0.98f, 0.98f, 0.98f), 0.5f,isNetworked,isServerSide);
 		}
 	}
 
 }
-GameObject* TutorialGame::AddOBBCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass) {
+
+GameObject* TutorialGame::AddOBBCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass, bool isNetworked, bool isServerSide) {
 	GameObject* cube = new GameObject();
 
 	OBBVolume* volume = new OBBVolume(dimensions);
@@ -707,21 +901,27 @@ GameObject* TutorialGame::AddOBBCubeToWorld(const Vector3& position, Vector3 dim
 		.SetScale(dimensions * 2)
 		.SetOrientation(Quaternion::EulerAnglesToQuaternion(30,0,0));
 
-	cube->SetRenderObject(new RenderObject(&cube->GetTransform(), cubeMesh, basicTex, basicShader));
-	cube->SetPhysicsObject(new PhysicsObject(&cube->GetTransform(), cube->GetBoundingVolume(),false,false,STATIC_LAYER));
+	if (!isNetworked || isServerSide) {
+		cube->SetRenderObject(new RenderObject(&cube->GetTransform(), cubeMesh, basicTex, basicShader));
+		cube->SetPhysicsObject(new PhysicsObject(&cube->GetTransform(), cube->GetBoundingVolume(), false, false, STATIC_LAYER));
 
-	PhysicsObject* co = cube->GetPhysicsObject();
-	co->SetInverseMass(0);
-	co->InitCubeInertia();
+		PhysicsObject* co = cube->GetPhysicsObject();
+		co->SetInverseMass(0);
+		co->InitCubeInertia();
 
-	PhysicsMaterial* cubePhys;
-	if (world->TryGetPhysMat("Standard", cubePhys))co->SetPhysMat(cubePhys);
-
+		PhysicsMaterial* cubePhys;
+		if (world->TryGetPhysMat("Standard", cubePhys))co->SetPhysMat(cubePhys);
+	}
+	if (isNetworked) {
+		cube->SetNetworkObject(new NetworkObject(*cube, currentNetworkObjectID));
+		currentNetworkObjectID++;
+	}
 	world->AddGameObject(cube);
 
 	return cube;
 }
-GameObject* TutorialGame::AddWallToWorld(const Vector3& position, Vector3 dimensions) {
+
+GameObject* TutorialGame::AddWallToWorld(const Vector3& position, Vector3 dimensions, bool isNetworked, bool isServerSide) {
 	GameObject* cube = new GameObject();
 
 	AABBVolume* volume = new AABBVolume(dimensions);
@@ -732,22 +932,24 @@ GameObject* TutorialGame::AddWallToWorld(const Vector3& position, Vector3 dimens
 		.SetScale(dimensions * 2);
 
 	cube->SetRenderObject(new RenderObject(&cube->GetTransform(), cubeMesh, basicTex, basicShader));
-	cube->SetPhysicsObject(new PhysicsObject(&cube->GetTransform(), cube->GetBoundingVolume(),false));
 
-	PhysicsObject* co = cube->GetPhysicsObject();
-	co->SetInverseMass(0);
-	co->InitCubeInertia();
-	co->SetCollisionLayer(STATIC_LAYER);
+	if (!isNetworked || isServerSide) {
+		cube->SetPhysicsObject(new PhysicsObject(&cube->GetTransform(), cube->GetBoundingVolume(), false));
 
-	PhysicsMaterial* cubePhys;
-	if (world->TryGetPhysMat("Standard", cubePhys))co->SetPhysMat(cubePhys);
+		PhysicsObject* co = cube->GetPhysicsObject();
+		co->SetInverseMass(0);
+		co->InitCubeInertia();
+		co->SetCollisionLayer(STATIC_LAYER);
 
+		PhysicsMaterial* cubePhys;
+		if (world->TryGetPhysMat("Standard", cubePhys))co->SetPhysMat(cubePhys);
+	}
 	world->AddGameObject(cube);
 
 	return cube;
 }
 
-GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
+GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position, bool isNetworked, bool isServerSide) {
 	float meshSize		= 1.0f;
 	float inverseMass	= 0.8f;
 
@@ -781,7 +983,7 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 	PlayerInputComponent* pic = new PlayerInputComponent(character, &world->GetMainCamera());
 	PlayerValuesComponent* pvc = new PlayerValuesComponent(world);
 
-	GameObject* pickupObject = AddSphereTriggerToWorld(Vector3(-1, 10, 0), 0.8f);
+	GameObject* pickupObject = AddSphereTriggerToWorld(Vector3(-1, 10, 0), 0.8f, isNetworked, isServerSide);
 
 	TriggerComponent* tc = new TriggerComponent();
 
@@ -800,7 +1002,7 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position) {
 	return character;
 }
 
-GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position, std::vector<Vector3>& patrolPoints) {
+GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position, std::vector<Vector3>& patrolPoints, bool isNetworked, bool isServerSide) {
 	float meshSize		= 1.0f;
 	float inverseMass	= 0.5f;
 
@@ -837,7 +1039,7 @@ GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position, std::vector<V
 	return character;
 }
 
-GameObject* TutorialGame::AddKeyDoorPairToWorld(const Vector3& keyPosition, const Vector3& doorPosition, const Vector4& colour) { //returns the key object
+GameObject* TutorialGame::AddKeyDoorPairToWorld(const Vector3& keyPosition, const Vector3& doorPosition, const Vector4& colour, bool isNetworked, bool isServerSide) { //returns the key object
 	GameObject* key = new GameObject();
 	GameObject* door = new GameObject();
 	Vector3 keyScale(0.2f, 0.2f, 0.3f);
@@ -858,58 +1060,43 @@ GameObject* TutorialGame::AddKeyDoorPairToWorld(const Vector3& keyPosition, cons
 		.SetScale(doorScale * 2);
 
 	key->SetRenderObject(new RenderObject(&key->GetTransform(), cubeMesh, basicTex, basicShader));
-	key->SetPhysicsObject(new PhysicsObject(&key->GetTransform(), key->GetBoundingVolume()));
+
 	key->GetRenderObject()->SetColour(colour);
 
 	door->SetRenderObject(new RenderObject(&door->GetTransform(), cubeMesh, basicTex, basicShader));
-	door->SetPhysicsObject(new PhysicsObject(&door->GetTransform(), door->GetBoundingVolume(),false)); //door is static
 	door->GetRenderObject()->SetColour(colour);
 
-	PhysicsObject* ko = key->GetPhysicsObject();
-	ko->SetInverseMass(0.7f);
-	ko->InitCubeInertia();
+	if (!isNetworked || isServerSide) {
+		door->SetPhysicsObject(new PhysicsObject(&door->GetTransform(), door->GetBoundingVolume(), false)); //door is static
+		key->SetPhysicsObject(new PhysicsObject(&key->GetTransform(), key->GetBoundingVolume()));
+		PhysicsObject* ko = key->GetPhysicsObject();
+		ko->SetInverseMass(0.7f);
+		ko->InitCubeInertia();
 
-	PhysicsObject* doorO = door->GetPhysicsObject();
-	doorO->SetInverseMass(0);
-	doorO->InitCubeInertia();
+		PhysicsObject* doorO = door->GetPhysicsObject();
+		doorO->SetInverseMass(0);
+		doorO->InitCubeInertia();
 
-	PhysicsMaterial* keyPhys;
-	if (world->TryGetPhysMat("Standard", keyPhys))ko->SetPhysMat(keyPhys);
+		PhysicsMaterial* keyPhys;
+		if (world->TryGetPhysMat("Standard", keyPhys))ko->SetPhysMat(keyPhys);
 
-	PhysicsMaterial* doorPhys;
-	if (world->TryGetPhysMat("Standard", doorPhys))doorO->SetPhysMat(doorPhys);
+		PhysicsMaterial* doorPhys;
+		if (world->TryGetPhysMat("Standard", doorPhys))doorO->SetPhysMat(doorPhys);
 
-	KeyComponent* kc = new KeyComponent(key, door, world);
-	key->AddComponent(kc);
+		KeyComponent* kc = new KeyComponent(key, door, world);
+		key->AddComponent(kc);
+	}
+	if (isNetworked) {
+		key->SetNetworkObject(new NetworkObject(*key, currentNetworkObjectID));
+		currentNetworkObjectID++;
 
+		door->SetNetworkObject(new NetworkObject(*door, currentNetworkObjectID));
+		currentNetworkObjectID++;
+	}
 	world->AddGameObject(key);
 	world->AddGameObject(door);
 
 	return key;
-}
-
-StateGameObject* TutorialGame::AddStateObjectToWorld(const Vector3& position) {
-	StateGameObject* stateObj = new StateGameObject();
-
-	SphereVolume* volume = new SphereVolume(0.5f);
-	stateObj->SetBoundingVolume((CollisionVolume*)volume);
-	stateObj->GetTransform()
-		.SetScale(Vector3(2, 2, 2))
-		.SetPosition(position);
-
-	stateObj->SetRenderObject(new RenderObject(&stateObj->GetTransform(), cubeMesh, nullptr, basicShader));
-	stateObj->SetPhysicsObject(new PhysicsObject(&stateObj->GetTransform(), stateObj->GetBoundingVolume()));
-
-	PhysicsObject* so = stateObj->GetPhysicsObject();
-	so->SetInverseMass(0.5f);
-	so->InitSphereInertia();
-	PhysicsMaterial* statePhys;
-	if (world->TryGetPhysMat("Standard", statePhys))so->SetPhysMat(statePhys);
-
-
-	world->AddGameObject(stateObj);
-
-	return stateObj;
 }
 
 
@@ -1023,7 +1210,7 @@ void TutorialGame::MoveSelectedObject() {
 	}
 }
 
-void TutorialGame::CreateStaticLevel() {
+void TutorialGame::CreateStaticLevel(bool isNetworked, bool isServerSide) {
 	std::ifstream infile(Assets::DATADIR + "TestGrid1.txt");
 	int nodeSize;
 	int gridWidth;
@@ -1036,16 +1223,16 @@ void TutorialGame::CreateStaticLevel() {
 			char type = 0;
 			infile >> type;
 			if (type == 'r') { //roof
-				AddWallToWorld(Vector3((float)(x * nodeSize), nodeSize * 1, (float)(y * nodeSize)), Vector3(nodeSize, nodeSize, nodeSize) * 0.5f);
-				AddPointPickupToWorld(Vector3((float)(x * nodeSize), -4, (float)(y * nodeSize)), 10);
+				AddWallToWorld(Vector3((float)(x * nodeSize), nodeSize * 1, (float)(y * nodeSize)), Vector3(nodeSize, nodeSize, nodeSize) * 0.5f, isNetworked, isServerSide);
+				AddPointPickupToWorld(Vector3((float)(x * nodeSize), -4, (float)(y * nodeSize)), 10,isNetworked,isServerSide);
 			}
 			else if (type != '.') {
 				int intType = type - '0';
 				for(int i=0;i<intType;i++)
-				AddWallToWorld(Vector3((float)(x * nodeSize), nodeSize*i, (float)(y * nodeSize)), Vector3(nodeSize, nodeSize, nodeSize) * 0.5f);
+				AddWallToWorld(Vector3((float)(x * nodeSize), nodeSize*i, (float)(y * nodeSize)), Vector3(nodeSize, nodeSize, nodeSize) * 0.5f, isNetworked, isServerSide);
 			}
 			else {
-				AddPointPickupToWorld(Vector3((float)(x * nodeSize), -3, (float)(y * nodeSize)),10);
+				AddPointPickupToWorld(Vector3((float)(x * nodeSize), -3, (float)(y * nodeSize)),10, isNetworked, isServerSide);
 			}
 			//if (type == 'x')AddCubeToWorld(Vector3(x, 0, y), Vector3(1,1,1));
 		}

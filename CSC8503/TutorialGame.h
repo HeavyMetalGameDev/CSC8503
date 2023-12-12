@@ -42,7 +42,7 @@
 
 namespace NCL {
 	namespace CSC8503 {
-		class TutorialGame		{
+		class TutorialGame : public PacketReceiver		{
 		public:
 			TutorialGame();
 			~TutorialGame();
@@ -53,7 +53,11 @@ namespace NCL {
 			GameState GetState() { return world->GetState(); }
 			void SetState(GameState s) { world->SetState(s); }
 
+			void ReceivePacket(int type, GamePacket* payload, int source = -1)override;
+
 			virtual void UpdateGame(float dt);
+			virtual void UpdateGameAsClient(float dt);
+			virtual void UpdateGameAsServer(float dt);
 		protected:
 			void InitialiseAssets();
 
@@ -78,30 +82,29 @@ namespace NCL {
 			void DebugObjectMovement();
 			void LockedObjectMovement();
 
+			
+
 			void BridgeConstraintTest();
 			GameObject* AddFloorToWorld(const Vector3& position);
-			GameObject* AddSphereToWorld(const Vector3& position, float radius, float inverseMass = 10.0f);
-			GameObject* AddCapsuleToWorld(const Vector3& position, float size, float inverseMass = 10.0f);
-			GameObject* AddPointPickupToWorld(const Vector3& position, int points);
-			GameObject* AddGrappleUnlockerToWorld(const Vector3& position);
-			GameObject* AddSphereTriggerToWorld(const Vector3& position, float radius);
-			GameObject* AddCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass = 10.0f);
-			void AddCubeWallToWorld(const Vector3& position);
-			GameObject* AddOBBCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass = 10.0f);
-			GameObject* AddWallToWorld(const Vector3& position, Vector3 dimensions);
-			GameObject* AddJumppad(const Vector3& position);
-			GameObject* AddTreasure(const Vector3& position);
-			GameObject* AddTreasurePoint(const Vector3& position);
-			void AddRopeToWorld(const Vector3& position);
+			GameObject* AddSphereToWorld(const Vector3& position, float radius, float inverseMass = 10.0f, bool isNetworked=false,bool isServerSide = false);
+			GameObject* AddCapsuleToWorld(const Vector3& position, float size, float inverseMass = 10.0f, bool isNetworked = false, bool isServerSide = false);
+			GameObject* AddPointPickupToWorld(const Vector3& position, int points, bool isNetworked = false, bool isServerSide = false);
+			GameObject* AddGrappleUnlockerToWorld(const Vector3& position, bool isNetworked = false, bool isServerSide = false);
+			GameObject* AddSphereTriggerToWorld(const Vector3& position, float radius, bool isNetworked = false, bool isServerSide = false);
+			GameObject* AddCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass = 10.0f, bool isNetworked = false, bool isServerSide = false);
+			void AddCubeWallToWorld(const Vector3& position, bool isNetworked = false, bool isServerSide = false);
+			GameObject* AddOBBCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass = 10.0f, bool isNetworked = false, bool isServerSide = false);
+			GameObject* AddWallToWorld(const Vector3& position, Vector3 dimensions, bool isNetworked = false, bool isServerSide = false);
+			GameObject* AddJumppad(const Vector3& position, bool isNetworked = false, bool isServerSide = false);
+			GameObject* AddTreasure(const Vector3& position, bool isNetworked = false, bool isServerSide = false);
+			GameObject* AddTreasurePoint(const Vector3& position, bool isNetworked = false, bool isServerSide = false);
+			void AddRopeToWorld(const Vector3& position, bool isNetworked = false, bool isServerSide = false);
 
-			GameObject* AddPlayerToWorld(const Vector3& position);
-			GameObject* AddEnemyToWorld(const Vector3& position, std::vector<Vector3>& patrolPoints);
-			GameObject* AddKeyDoorPairToWorld(const Vector3& keyPosition,const Vector3& doorPosition, const Vector4& colour);
+			GameObject* AddPlayerToWorld(const Vector3& position, bool isNetworked = false, bool isServerSide = false);
+			GameObject* AddEnemyToWorld(const Vector3& position, std::vector<Vector3>& patrolPoints, bool isNetworked = false, bool isServerSide = false);
+			GameObject* AddKeyDoorPairToWorld(const Vector3& keyPosition,const Vector3& doorPosition, const Vector4& colour, bool isNetworked = false, bool isServerSide = false);
 
-			void CreateStaticLevel();
-
-			StateGameObject* AddStateObjectToWorld(const Vector3& position);
-			StateGameObject* testStateObject;
+			void CreateStaticLevel(bool isNetworked = false, bool isServerSide = false);
 
 #ifdef USEVULKAN
 			GameTechVulkanRenderer*	renderer;
@@ -150,8 +153,11 @@ namespace NCL {
 			int port;
 			GameServer* server;
 			GameClient* client;
-			TestPacketReceiver serverReceiver;
-			TestPacketReceiver clientReceiver;
+			
+			bool isClient;
+
+			int currentNetworkObjectID = 0;
+
 		};
 	}
 

@@ -47,19 +47,18 @@ namespace NCL::CSC8503 {
 		//Called by servers
 		virtual bool WritePacket(GamePacket** p, bool deltaFrame, int stateID);
 
+		int GetNetworkID() { return networkID; }
 		void UpdateStateHistory(int minID);
+		virtual bool ReadDeltaPacket(DeltaPacket& p);
+		virtual bool ReadFullPacket(FullPacket& p);
+		virtual bool WriteDeltaPacket(GamePacket** p, int stateID);
+		virtual bool WriteFullPacket(GamePacket** p);
 
 	protected:
 
 		NetworkState& GetLatestNetworkState();
 
 		bool GetNetworkState(int frameID, NetworkState& state);
-
-		virtual bool ReadDeltaPacket(DeltaPacket &p);
-		virtual bool ReadFullPacket(FullPacket &p);
-
-		virtual bool WriteDeltaPacket(GamePacket**p, int stateID);
-		virtual bool WriteFullPacket(GamePacket**p);
 
 		GameObject& object;
 
@@ -72,4 +71,5 @@ namespace NCL::CSC8503 {
 
 		int networkID;
 	};
+
 }
