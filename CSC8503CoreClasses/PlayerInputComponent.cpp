@@ -59,6 +59,7 @@ namespace NCL::CSC8503{
 				if (hasUnlockedGrapple) {
 					Vector3 forceDirection = staticGrapplePoint - gameObject->GetTransform().GetPosition();
 					forceDirection.Normalise();
+					forceDirection.y *= 0.3f; //this is because the player has less y damping so the force needs to be lower
 					physObject->AddForce(forceDirection * 200.0f);
 				}
 				else {

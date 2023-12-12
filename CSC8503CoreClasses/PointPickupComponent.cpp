@@ -10,6 +10,7 @@ namespace NCL::CSC8503 {
 			PlayerValuesComponent* pvc;
 			if (other->TryGetComponent<PlayerValuesComponent>(pvc)) {
 				pvc->AddPoints(pointsToGive);
+				pvc->AddPickup();
 				gameObject->SetActive(false);
 				world->RemoveGameObject(gameObject);
 				

@@ -37,6 +37,8 @@ namespace NCL {
 			void RenderCamera(); 
 			void RenderSkybox();
 
+			void SetWorld(GameWorld* w){}
+
 			void LoadSkybox();
 
 			void SetDebugStringBufferSizes(size_t newVertCount);

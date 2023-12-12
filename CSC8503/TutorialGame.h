@@ -9,6 +9,8 @@
 
 #include "StateGameObject.h"
 #include "TestComponent.h"
+#include "PushdownMachine.h"
+#include "PushdownState.h"
 
 #include "GameWorld.h"
 #include "PhysicsObject.h"
@@ -40,6 +42,10 @@ namespace NCL {
 		public:
 			TutorialGame();
 			~TutorialGame();
+			void InitWorld();
+
+			GameState GetState() { return world->GetState(); }
+			void SetState(GameState s) { world->SetState(s); }
 
 			virtual void UpdateGame(float dt);
 		protected:
@@ -48,7 +54,7 @@ namespace NCL {
 			void InitCamera();
 			void UpdateKeys();
 
-			void InitWorld();
+
 
 			/*
 			These are some of the world/object creation functions I created when testing the functionality
@@ -131,7 +137,8 @@ namespace NCL {
 			}
 
 			GameObject* objClosest = nullptr;
-			float gameTimer = 180;
+			float gameTimer = 0;
+			int totalPickups = 0;
 		};
 	}
 }

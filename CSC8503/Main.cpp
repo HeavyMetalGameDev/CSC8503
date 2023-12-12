@@ -41,35 +41,9 @@ class PauseScreen : public PushdownState {
 };
 class GameScreen : public PushdownState {
 	public:
-	GameScreen(){ 
-		g = new TutorialGame();
-		//TestPathfinding();
-	}
-	~GameScreen() {
-		delete g;
-	}
-
-	void TestPathfinding() {
-		NavigationGrid grid("TestGrid1.txt");
-
-		NavigationPath outPath;
-
-		Vector3 startPos(80, 0, 10);
-		Vector3 endPos(80, 0, 80);
-
-		bool found = grid.FindPath(startPos, endPos, outPath);
-
-		Vector3 pos;
-		while (outPath.PopWaypoint(pos))testNodes.push_back(pos);
-	}
-
-	void DisplayPathfinding() {
-		for (int i = 1; i < testNodes.size(); i++) {
-			Vector3 a = testNodes[i - 1];
-			Vector3 b = testNodes[i];
-
-			Debug::DrawLine(a, b, Vector4(0, 1, 0, 1));
-		}
+	GameScreen(TutorialGame* t){ 
+		g = t;
+		g->InitWorld();
 	}
 
 	PushdownResult OnUpdate(float dt, PushdownState** newState) override {
@@ -86,10 +60,10 @@ class GameScreen : public PushdownState {
 			*newState = new PauseScreen();
 			return PushdownResult::Push;
 		}
-		//DisplayPathfinding();
 		g->UpdateGame(dt);
 		return PushdownResult::NoChange;
 	};
+
 protected:
 	TutorialGame* g;
 	std::vector<Vector3> testNodes;
@@ -98,14 +72,15 @@ protected:
 
 class MenuScreen : public PushdownState {
 public:
-	MenuScreen() { tempWorld = new GameWorld(); r = new GameTechRenderer(*tempWorld); }
+	MenuScreen(TutorialGame* t) {
+		g = t;
+	}
 	PushdownResult OnUpdate(float dt, PushdownState** newState) override {
 		Debug::Print("1: Start Game", Vector2(40, 30));
 		Debug::Print("ESCAPE: Exit Game", Vector2(40, 50));
-		tempWorld->UpdateWorld(dt);
-		r->Render();
+		g->UpdateGame(0);
 		if (Window::GetKeyboard()->KeyPressed(KeyCodes::NUM1)) {
-			*newState = new GameScreen();
+			*newState = new GameScreen(g);
 			return PushdownResult::Push;
 		}
 		if (Window::GetKeyboard()->KeyPressed(KeyCodes::ESCAPE)) {
@@ -114,16 +89,15 @@ public:
 		return PushdownResult::NoChange;
 	}
 	void OnAwake() override {
-		
-		std::cout << "Welcome to a really awesome game!\nPress Space To Begin or Escape to Quit!\n";
+		g->SetState(GameState::STATE_MENU);
 	}
 protected:
-	GameTechRenderer* r;
-	GameWorld* tempWorld;
+	TutorialGame* g;
 };
 
 void RunPushdownAutomata(Window* w) {
-	PushdownMachine machine(new MenuScreen());
+	TutorialGame* newGame = new TutorialGame();
+	PushdownMachine machine(new MenuScreen(newGame));
 	while (w->UpdateWindow()) {
 		float dt = w->GetTimer().GetTimeDeltaSeconds();
 		if (!machine.Update(dt))return;

@@ -14,7 +14,7 @@ namespace NCL {
 		class GameObject;
 		class Constraint;
 		enum GameState {
-			STATE_PLAYING, STATE_WIN, STATE_LOSE
+			STATE_MENU,STATE_PLAYING, STATE_WIN, STATE_LOSE
 		};
 
 		typedef std::function<void(GameObject*)> GameObjectFunc;
@@ -38,6 +38,7 @@ namespace NCL {
 				return mainCamera;
 			}
 
+			GameState GetState(){return state;}
 			void ShuffleConstraints(bool state) {
 				shuffleConstraints = state;
 			}
@@ -46,6 +47,7 @@ namespace NCL {
 				shuffleObjects = state;
 			}
 
+			void SetState(GameState s) { state = s; }
 			void WinGame() { state = STATE_WIN; }
 			void LoseGame() { state = STATE_LOSE; }
 

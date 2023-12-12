@@ -15,10 +15,13 @@ namespace NCL::CSC8503 {
 		void ChangeHealth(int h) { health += h; }
 		int GetHealth() { return health; }
 
+		void AddPickup() { pickups++; }
+
 		void Update(float dt)override;
 	protected:
 		int points=0;
 		int health=100;
+		int pickups = 0;
 		GameWorld* world;
 
 	};

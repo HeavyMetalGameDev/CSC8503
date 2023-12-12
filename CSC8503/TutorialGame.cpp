@@ -76,30 +76,40 @@ TutorialGame::~TutorialGame()	{
 }
 
 void TutorialGame::UpdateGame(float dt) {
+
+	if (gameTimer <= 0)SetState(STATE_LOSE);
+	switch (GetState()) {
+	case STATE_MENU:
+		renderer->Update(dt);
+		renderer->Render();
+		return;
+		break;
+	case STATE_PLAYING:
+		break;
+
+	case STATE_WIN:
+		Debug::Print("WIN!!!!!!!!!!!", { 40,50 }, Debug::GREEN);
+		renderer->Update(dt);
+		renderer->Render();
+		gameTimer = 0.1f;
+		return;
+		break;
+	case STATE_LOSE:
+		Debug::Print("LOSE!!!!!!!!!!!", { 40,50 }, Debug::RED);
+		renderer->Update(dt);
+		renderer->Render();
+		gameTimer = 0.1f;
+		return;
+		break;
+	}
+
 	gameTimer -= dt;
 	Debug::Print("Time:" + std::to_string(((int)gameTimer)), { 5, 5 });
-	if (!inSelectionMode) {
-		world->GetMainCamera().UpdateCamera(dt);
-	}
-	if (lockedObject != nullptr) {
-		Vector3 objPos = lockedObject->GetTransform().GetPosition();
-		Vector3 camPos = objPos + lockedOffset;
-
-		Matrix4 temp = Matrix4::BuildViewMatrix(camPos, objPos, Vector3(0,1,0));
-
-		Matrix4 modelMat = temp.Inverse();
-
-		Quaternion q(modelMat);
-		Vector3 angles = q.ToEuler(); //nearly there now!
-
-		world->GetMainCamera().SetPosition(camPos);
-		world->GetMainCamera().SetPitch(angles.x);
-		world->GetMainCamera().SetYaw(angles.y);
-	}
+	Debug::Print("/"+std::to_string(totalPickups), Vector2(90, 10), Debug::YELLOW);
+	world->GetMainCamera().UpdateCamera(dt);
 
 	UpdateKeys();
 
-	if (testStateObject)testStateObject->Update(dt);
 
 	RayCollision closestCollision;
 	if (Window::GetKeyboard()->KeyPressed(KeyCodes::K) && selectionObject) {
@@ -251,6 +261,9 @@ void TutorialGame::InitCamera() {
 void TutorialGame::InitWorld() {
 	world->ClearAndErase();
 	physics->Clear();
+	gameTimer = 140;
+	totalPickups = 0;
+	SetState(STATE_PLAYING);
 
 	//InitMixedGridWorld(15, 15, 3.5f, 3.5f);
 	CreateStaticLevel();
@@ -259,7 +272,7 @@ void TutorialGame::InitWorld() {
 	
 	//STARTING ROOM----------------------------------------------------------------------------------------------------------------------
 	AddPlayerToWorld(Vector3(80, 0, 10));
-	//AddOBBCubeToWorld(Vector3(70, -5, 10),Vector3(3,1,3));
+	AddOBBCubeToWorld(Vector3(70, -5, 10),Vector3(3,1,3));
 	AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1),0);
 	AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f);
 	AddKeyDoorPairToWorld(Vector3(70, 3.5f, 10), Vector3(10, 0, 20), Debug::YELLOW);
@@ -502,6 +515,8 @@ GameObject* TutorialGame::AddPointPickupToWorld(const Vector3& position, int poi
 	//if (world->TryGetPhysMat("Bouncy", spherePhys))so->SetPhysMat(spherePhys);
 
 	world->AddGameObject(sphere);
+
+	totalPickups++;
 
 	return sphere;
 }
