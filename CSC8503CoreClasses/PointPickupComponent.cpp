@@ -8,6 +8,7 @@ namespace NCL::CSC8503 {
 
 		if (other->GetTag() == "Player") {
 			PlayerValuesComponent* pvc;
+			ServerPlayerComponent* spc;
 			if (other->TryGetComponent<PlayerValuesComponent>(pvc)) {
 				pvc->AddPoints(pointsToGive);
 				pvc->AddPickup();
@@ -15,7 +16,10 @@ namespace NCL::CSC8503 {
 				world->RemoveGameObject(gameObject);
 				
 			}
-			else {
+			else if(other->TryGetComponent<ServerPlayerComponent>(spc)){
+				spc->AddPoints(pointsToGive);
+				spc->AddPickup();
+				spc->SendInfoPacket();
 				gameObject->SetActive(false);
 				world->RemoveGameObject(gameObject);
 			}

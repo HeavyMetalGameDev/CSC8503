@@ -386,7 +386,7 @@ void TutorialGame::InitWorldClient() {
 	world->StartWorld();
 }
 
-void TutorialGame::InitWorldServer() {
+void TutorialGame::InitWorldServer() { //setup world as server
 	isClient = false;
 	NetworkBase::Initialise();
 	port = NetworkBase::GetDefaultPort();
@@ -480,16 +480,6 @@ void TutorialGame::ReceivePacket(int type, GamePacket* payload, int source) {
 		switch (type) {
 		case Client_State: {
 			ClientPacket* realPacket = (ClientPacket*)payload;
-			//std::cout << realPacket->buttonstates[0]
-			//	<< realPacket->buttonstates[1]
-			//	<< realPacket->buttonstates[2]
-			//	<< realPacket->buttonstates[3]
-			//	<< realPacket->buttonstates[4]
-			//	<< realPacket->buttonstates[5]
-			//	<< realPacket->buttonstates[6]
-			//	<< realPacket->buttonstates[7] << "  "
-			//	<< realPacket->camPitch << "  "
-			//	<< realPacket->camYaw << "\n";
 			ProcessClientInput(realPacket);
 			break;
 		}
@@ -545,32 +535,6 @@ void TutorialGame::ApplyPlayerInput() {
 		g->GetPhysicsObject()->AddForce(direction * deltaTime * 7000.0f);
 
 	}
-}
-
-void TutorialGame::BridgeConstraintTest() {
-	Vector3 cubeSize = Vector3(8, 8, 8);
-
-	float invCubeMass = 5;
-	int numLinks = 10;
-	float maxDistance = 30;
-	float cubeDistance = 20;
-
-	Vector3 startPos = Vector3(100, 100, 100);
-
-	GameObject* start = AddCubeToWorld(startPos, cubeSize, 0);
-	GameObject* end = AddCubeToWorld(startPos + Vector3((numLinks+2)*cubeDistance,0,0), cubeSize, 0);
-
-	GameObject* previous = start;
-
-	for (int i = 0; i < numLinks; i++) {
-		GameObject* block = AddCubeToWorld(startPos + Vector3((i + 1) * cubeDistance, 0, 0), cubeSize, invCubeMass);
-
-		PositionConstraint* constraint = new PositionConstraint(previous, block, maxDistance);
-		world->AddConstraint(constraint);
-		previous = block;
-	}
-	PositionConstraint* constraint = new PositionConstraint(previous, end, maxDistance);
-	world->AddConstraint(constraint);
 }
 
 void TutorialGame::AddRopeToWorld(const Vector3& position, bool isNetworked, bool isServerSide) {

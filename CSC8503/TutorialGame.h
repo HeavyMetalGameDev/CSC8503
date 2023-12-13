@@ -89,7 +89,6 @@ namespace NCL {
 
 			
 
-			void BridgeConstraintTest();
 			GameObject* AddFloorToWorld(const Vector3& position);
 			GameObject* AddSphereToWorld(const Vector3& position, float radius, float inverseMass = 10.0f, bool isNetworked=false,bool isServerSide = false);
 			GameObject* AddCapsuleToWorld(const Vector3& position, float size, float inverseMass = 10.0f, bool isNetworked = false, bool isServerSide = false);
