@@ -64,6 +64,14 @@ bool NetworkObject::ReadFullPacket(FullPacket &p) {
 	return true;
 }
 
+bool NetworkObject::ReadPlayerConnectPacket(PlayerConnectPacket& p) {
+	return true;
+}
+
+bool NetworkObject::ReadPlayerConnectServerAckPacket(PlayerConnectServerAckPacket& p) {
+	return true;
+}
+
 bool NetworkObject::WriteDeltaPacket(GamePacket**p, int stateID) {
 	DeltaPacket* dp = new DeltaPacket();
 	NetworkState state;
@@ -116,6 +124,23 @@ bool NetworkObject::WriteClientPacket(GamePacket** p,ClientInputComponent* c) {
 
 	cp->objectID = networkID;
 	*p = cp;
+	return true;
+}
+
+bool NetworkObject::WritePlayerConnectPacket(GamePacket** p) {
+	PlayerConnectPacket* pc = new PlayerConnectPacket();
+	*p = pc;
+	return true;
+}
+
+bool NetworkObject::WritePlayerConnectServerAckPacket(GamePacket** p,int numPlayers,int* playerIDs) {
+	PlayerConnectServerAckPacket* pcp = new PlayerConnectServerAckPacket();
+	for (int i = 0; i < numPlayers; i++) {
+		pcp->playerNetIDs[i] = playerIDs[i];
+	}
+	pcp->numPlayers = numPlayers;
+
+	*p = pcp;
 	return true;
 }
 

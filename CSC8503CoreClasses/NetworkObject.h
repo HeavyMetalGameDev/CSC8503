@@ -49,6 +49,33 @@ namespace NCL::CSC8503 {
 		}
 	};
 
+	struct GameInfoPacket : public GamePacket {
+		int		objectID;
+		int points;
+		int collectablesRemaining;
+
+		GameInfoPacket() {
+			type = Game_info;
+			size = sizeof(GameInfoPacket) - sizeof(GamePacket);
+		}
+	};
+
+	struct PlayerConnectPacket : public GamePacket {
+		PlayerConnectPacket() {
+			type = Player_Connected;
+			size = sizeof(PlayerConnectPacket) - sizeof(GamePacket);
+		}
+	};
+
+	struct PlayerConnectServerAckPacket : public GamePacket {
+		int playerNetIDs[4];
+		int numPlayers;
+		PlayerConnectServerAckPacket() {
+			type = Player_Connected;
+			size = sizeof(PlayerConnectServerAckPacket) - sizeof(GamePacket);
+		}
+	};
+
 	class NetworkObject		{
 	public:
 		NetworkObject(GameObject& o, int id);
@@ -63,9 +90,15 @@ namespace NCL::CSC8503 {
 		void UpdateStateHistory(int minID);
 		virtual bool ReadDeltaPacket(DeltaPacket& p);
 		virtual bool ReadFullPacket(FullPacket& p);
+		virtual bool ReadPlayerConnectPacket(PlayerConnectPacket& p);
+		virtual bool ReadPlayerConnectServerAckPacket(PlayerConnectServerAckPacket& p);
+
+
 		virtual bool WriteDeltaPacket(GamePacket** p, int stateID);
 		virtual bool WriteFullPacket(GamePacket** p);
 		virtual bool WriteClientPacket(GamePacket** p,ClientInputComponent* c);
+		virtual bool WritePlayerConnectPacket(GamePacket** p);
+		virtual bool WritePlayerConnectServerAckPacket(GamePacket** p, int numPlayers, int* playerIDs);
 
 	protected:
 

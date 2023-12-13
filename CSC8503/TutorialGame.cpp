@@ -134,6 +134,7 @@ void TutorialGame::UpdateGame(float dt) {
 
 	world->UpdateWorld(dt);
 	renderer->Update(dt);
+	
 	physics->Update(dt);
 	
 
@@ -144,13 +145,22 @@ void TutorialGame::UpdateGame(float dt) {
 }
 
 void TutorialGame::UpdateGameAsClient(float dt) {
-	deltaTime = dt;
 	client->UpdateClient();
+	
+	if (!hasClientInitialised) {
+		PlayerConnectPacket* connectPacket = new PlayerConnectPacket();
+		client->SendPacket(*connectPacket);
+		delete connectPacket;
+		return;
+	}
+	deltaTime = dt;
+	
 
 	world->GetMainCamera().UpdateCamera(dt);
 
 	UpdateKeys();
 	ClientInputComponent* inp;
+	if (!player)return;
 	if (player->TryGetComponent<ClientInputComponent>(inp)) {
 		GamePacket* p;
 		player->GetNetworkObject()->WriteClientPacket(&p,inp);
@@ -194,7 +204,7 @@ void TutorialGame::UpdateGameAsServer(float dt) {
 		break;
 	}
 
-	gameTimer -= dt;
+	//gameTimer -= dt;
 	Debug::Print("Time:" + std::to_string(((int)gameTimer)), { 5, 5 });
 	Debug::Print("/" + std::to_string(totalPickups), Vector2(90, 10), Debug::YELLOW);
 	world->GetMainCamera().UpdateCamera(dt);
@@ -227,6 +237,8 @@ void TutorialGame::UpdateGameAsServer(float dt) {
 
 	world->UpdateWorld(dt);
 	renderer->Update(dt);
+	ApplyPlayerInput();
+	physics->Update(dt);
 	physics->Update(dt);
 
 	world->OperateOnContents([&](GameObject* g)->void
@@ -332,20 +344,23 @@ void TutorialGame::InitWorldClient() {
 	client = new GameClient();
 	client->RegisterPacketHandler(String_Message, this);
 	client->RegisterPacketHandler(Full_State, this);
-	bool canConnect = client->Connect(127, 0, 0, 1, port);
+	client->RegisterPacketHandler(Player_Connected, this);
 
+	bool canConnect = client->Connect(127, 0, 0, 1, port);
 	world->ClearAndErase();
 	physics->Clear();
 	gameTimer = 140;
 	totalPickups = 0;
 	SetState(STATE_CLIENT);
 
+
 	CreateStaticLevel(true, false);
 	InitDefaultFloor();
 
+
 	//STARTING ROOM----------------------------------------------------------------------------------------------------------------------
-	AddPlayerToWorld(Vector3(80, 0, 10),true,false);
-	AddOBBCubeToWorld(Vector3(70, -5, 10), Vector3(3, 1, 3), true, false);
+	//AddPlayerToWorld(Vector3(80, 0, 10),true,false);
+	AddOBBCubeToWorld(Vector3(70, -5, 10), Vector3(3, 1, 3),0, true, false);
 	AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1), 0, true, false);
 	AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f, true, false);
 	AddKeyDoorPairToWorld(Vector3(70, 3.5f, 10), Vector3(10, 0, 20), Debug::YELLOW, true, false);
@@ -365,7 +380,6 @@ void TutorialGame::InitWorldClient() {
 
 
 	AddTreasure(Vector3(80, 20, 10), true, false);
-
 	world->StartWorld();
 }
 
@@ -373,9 +387,10 @@ void TutorialGame::InitWorldServer() {
 	isClient = false;
 	NetworkBase::Initialise();
 	port = NetworkBase::GetDefaultPort();
-	server = new GameServer(port, 2);
+	server = new GameServer(port, 4);
 	server->RegisterPacketHandler(String_Message, this);
 	server->RegisterPacketHandler(Client_State, this);
+	server->RegisterPacketHandler(Player_Connected, this);
 
 	world->ClearAndErase();
 	physics->Clear();
@@ -387,7 +402,7 @@ void TutorialGame::InitWorldServer() {
 	InitDefaultFloor();
 
 	//STARTING ROOM----------------------------------------------------------------------------------------------------------------------
-	AddPlayerToWorld(Vector3(80, 0, 10),true,true);
+	//AddPlayerToWorld(Vector3(80, 0, 10),true,true);
 	AddOBBCubeToWorld(Vector3(70, -5, 10), Vector3(3, 1, 3), 0, true,true);
 	AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1), 0, true, true);
 	AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f, true, true);
@@ -432,39 +447,91 @@ void TutorialGame::ReceivePacket(int type, GamePacket* payload, int source) {
 				});
 			break;
 		}
+		case Player_Connected: {
+			if (!hasClientInitialised) {
+				PlayerConnectServerAckPacket* realPacket = (PlayerConnectServerAckPacket*)payload;
+				AddPlayerToWorld(Vector3(80, 0, 10), true, false, true, realPacket->playerNetIDs[realPacket->numPlayers - 1]);
+				for (int i = 0; i < realPacket->numPlayers - 1; i++) {
+					AddPlayerToWorld(Vector3(80, 0, 10), true, false, false, realPacket->playerNetIDs[i]);
+				}
+				hasClientInitialised = true;
+			}
+			else {
+				PlayerConnectServerAckPacket* realPacket = (PlayerConnectServerAckPacket*)payload;
+				AddPlayerToWorld(Vector3(80, 0, 10), true, false, false, realPacket->playerNetIDs[realPacket->numPlayers - 1]);
+			}
+
+		}
 		}
 	}
 	else {
 		switch (type) {
 		case Client_State: {
 			ClientPacket* realPacket = (ClientPacket*)payload;
-			std::cout << realPacket->buttonstates[0]
-				<< realPacket->buttonstates[1]
-				<< realPacket->buttonstates[2]
-				<< realPacket->buttonstates[3]
-				<< realPacket->buttonstates[4]
-				<< realPacket->buttonstates[5]
-				<< realPacket->buttonstates[6]
-				<< realPacket->buttonstates[7] << "  "
-				<< realPacket->camPitch << "  "
-				<< realPacket->camYaw << "\n";
+			//std::cout << realPacket->buttonstates[0]
+			//	<< realPacket->buttonstates[1]
+			//	<< realPacket->buttonstates[2]
+			//	<< realPacket->buttonstates[3]
+			//	<< realPacket->buttonstates[4]
+			//	<< realPacket->buttonstates[5]
+			//	<< realPacket->buttonstates[6]
+			//	<< realPacket->buttonstates[7] << "  "
+			//	<< realPacket->camPitch << "  "
+			//	<< realPacket->camYaw << "\n";
 			ProcessClientInput(realPacket);
 			break;
+		}
+		case Player_Connected: {
+			if (prevClient == source)return;
+			PlayerConnectPacket* realPacket = (PlayerConnectPacket*)payload;
+			numPlayers++;
+			GameObject* player = AddPlayerToWorld(Vector3(80, 0, 10), true, true);
+			//add a player to world
+			GamePacket* p;
+			playerIDs[numPlayers-1] = currentNetworkObjectID - 1;
+			PlayerConnectServerAckPacket* pac = new PlayerConnectServerAckPacket();
+			pac->numPlayers = numPlayers;
+			pac->playerNetIDs[0] = playerIDs[0];
+			pac->playerNetIDs[1] = playerIDs[1];
+			pac->playerNetIDs[2] = playerIDs[2];
+			pac->playerNetIDs[3] = playerIDs[3];
+			server->SendGlobalPacket(*pac);
+			prevClient = source;
 		}
 		}
 	}
 }
 void TutorialGame::ProcessClientInput(ClientPacket* p) {
-	GameObject* playerObject = playerMap[p->objectID];
-	Transform playerTransform = playerObject->GetTransform();
-	Vector3 inputDirection(p->buttonstates[3] - p->buttonstates[1], 0, p->buttonstates[0] - p->buttonstates[2]);
-	Matrix4 yawRotation = Matrix4::Rotation(p->camYaw, Vector3(0, 1, 0));
 
-	Vector3 direction;
-	direction += yawRotation * Vector3(0, 0, inputDirection.z);
-	direction += yawRotation * Vector3(inputDirection.x, 0, 0);
+	playerInputsMap[p->objectID][0] = p->buttonstates[0];
+	playerInputsMap[p->objectID][1] = p->buttonstates[1];
+	playerInputsMap[p->objectID][2] = p->buttonstates[2];
+	playerInputsMap[p->objectID][3] = p->buttonstates[3];
+	playerInputsMap[p->objectID][4] = p->buttonstates[4];
+	playerInputsMap[p->objectID][5] = p->buttonstates[5];
+	playerInputsMap[p->objectID][6] = p->buttonstates[6];
+	playerInputsMap[p->objectID][7] = p->buttonstates[7];
 
-	playerObject->GetPhysicsObject()->AddForce(direction * deltaTime *7000.0f);
+	playerCameraMap[p->objectID].pitch = p->camPitch;
+	playerCameraMap[p->objectID].yaw = p->camYaw;
+}
+
+void TutorialGame::ApplyPlayerInput() {
+	for (std::pair<const int, bool[8]> inputPair : playerInputsMap) {
+		if (!inputPair.first)continue;
+		CameraInputStruct c = playerCameraMap[inputPair.first];
+		GameObject* g = playerMap[inputPair.first];
+		Transform playerTransform = g->GetTransform();
+		Vector3 inputDirection(inputPair.second[3] - inputPair.second[1], 0, inputPair.second[2] - inputPair.second[0]);
+		Matrix4 yawRotation = Matrix4::Rotation(c.yaw, Vector3(0, 1, 0));
+
+		Vector3 direction;
+		direction += yawRotation * Vector3(0, 0, inputDirection.z);
+		direction += yawRotation * Vector3(inputDirection.x, 0, 0);
+		g->GetPhysicsObject()->SetAwake();
+		g->GetPhysicsObject()->AddForce(direction * deltaTime * 7000.0f);
+
+	}
 }
 
 void TutorialGame::BridgeConstraintTest() {
@@ -669,7 +736,7 @@ GameObject* TutorialGame::AddSphereTriggerToWorld(const Vector3& position, float
 		.SetPosition(position);
 
 	if (!isNetworked || isServerSide) {
-		//sphere->SetRenderObject(new RenderObject(&sphere->GetTransform(), sphereMesh, basicTex, basicShader));
+		sphere->SetRenderObject(new RenderObject(&sphere->GetTransform(), sphereMesh, basicTex, basicShader));
 		sphere->SetPhysicsObject(new PhysicsObject(&sphere->GetTransform(), sphere->GetBoundingVolume(), true, true, PICKUP_SPHERE_LAYER));
 
 		//PhysicsMaterial* spherePhys;
@@ -865,9 +932,10 @@ GameObject* TutorialGame::AddOBBCubeToWorld(const Vector3& position, Vector3 dim
 		.SetPosition(position)
 		.SetScale(dimensions * 2)
 		.SetOrientation(Quaternion::EulerAnglesToQuaternion(30,0,0));
+	cube->SetRenderObject(new RenderObject(&cube->GetTransform(), cubeMesh, basicTex, basicShader));
 
 	if (!isNetworked || isServerSide) {
-		cube->SetRenderObject(new RenderObject(&cube->GetTransform(), cubeMesh, basicTex, basicShader));
+		
 		cube->SetPhysicsObject(new PhysicsObject(&cube->GetTransform(), cube->GetBoundingVolume(), false, false, STATIC_LAYER));
 
 		PhysicsObject* co = cube->GetPhysicsObject();
@@ -914,7 +982,7 @@ GameObject* TutorialGame::AddWallToWorld(const Vector3& position, Vector3 dimens
 	return cube;
 }
 
-GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position, bool isNetworked, bool isServerSide) {
+GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position, bool isNetworked, bool isServerSide,bool isThisPlayer, int networkID) {
 	float meshSize		= 1.0f;
 	float inverseMass	= 0.8f;
 
@@ -964,9 +1032,6 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position, bool isNetwo
 
 	}
 	else {
-		character->SetNetworkObject(new NetworkObject(*character, currentNetworkObjectID));
-		playerMap[currentNetworkObjectID] = character;
-		currentNetworkObjectID++;
 		if (isServerSide) {
 			character->SetPhysicsObject(new PhysicsObject(&character->GetTransform(), character->GetBoundingVolume(), true, false, PLAYER_LAYER));
 			PhysicsObject* co = character->GetPhysicsObject();
@@ -977,12 +1042,36 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position, bool isNetwo
 			PhysicsMaterial* bouncyPhys;
 			if (world->TryGetPhysMat("Player", playerPhys))co->SetPhysMat(playerPhys);
 			world->TryGetPhysMat("Bouncy", bouncyPhys);
+
+			GameObject* pickupObject = AddSphereTriggerToWorld(Vector3(-1, 10, 0), 0.8f, false, isServerSide);
+
+			TriggerComponent* tc = new TriggerComponent();
+
+			pickupObject->AddComponent(tc);
+			ServerPlayerComponent* si = new ServerPlayerComponent(character, pickupObject, tc, playerInputsMap[currentNetworkObjectID], &playerCameraMap[currentNetworkObjectID],world);
+
+			character->AddComponent(si);
+
+			character->SetNetworkObject(new NetworkObject(*character, currentNetworkObjectID));
+			playerMap[currentNetworkObjectID] = character;
+			currentNetworkObjectID++;
+
 		}
 		else {
-			character->SetCamera(&world->GetMainCamera());
-			ClientInputComponent* ci = new ClientInputComponent(character, &world->GetMainCamera(),character->GetNetworkObject());
-			character->AddComponent(ci);
-			player = character;
+			if (isThisPlayer) {
+				character->SetCamera(&world->GetMainCamera());
+				ClientInputComponent* ci = new ClientInputComponent(character, &world->GetMainCamera(), character->GetNetworkObject());
+				character->AddComponent(ci);
+				player = character;
+
+				character->SetNetworkObject(new NetworkObject(*character, networkID));
+				playerMap[networkID] = character;
+				player = character;
+			}
+			else {
+				character->SetNetworkObject(new NetworkObject(*character, networkID));
+				playerMap[networkID] = character;
+			}
 		}
 	}
 
@@ -1056,7 +1145,7 @@ GameObject* TutorialGame::AddKeyDoorPairToWorld(const Vector3& keyPosition, cons
 	door->GetRenderObject()->SetColour(colour);
 
 	if (!isNetworked || isServerSide) {
-		door->SetPhysicsObject(new PhysicsObject(&door->GetTransform(), door->GetBoundingVolume(), false)); //door is static
+		door->SetPhysicsObject(new PhysicsObject(&door->GetTransform(), door->GetBoundingVolume(), false,false,STATIC_LAYER)); //door is static
 		key->SetPhysicsObject(new PhysicsObject(&key->GetTransform(), key->GetBoundingVolume()));
 		PhysicsObject* ko = key->GetPhysicsObject();
 		ko->SetInverseMass(0.7f);

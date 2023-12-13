@@ -34,6 +34,7 @@
 #include "JumppadComponent.h"
 #include "TreasureReturnPointComponent.h"
 #include "ClientInputComponent.h"
+#include "ServerPlayerComponent.h"
 #include "Assets.h"
 
 #include "PositionConstraint.h"
@@ -66,6 +67,7 @@ namespace NCL {
 			void UpdateKeys();
 
 			void ProcessClientInput(ClientPacket* p);
+			void ApplyPlayerInput();
 
 
 
@@ -101,7 +103,7 @@ namespace NCL {
 			GameObject* AddTreasurePoint(const Vector3& position, bool isNetworked = false, bool isServerSide = false);
 			void AddRopeToWorld(const Vector3& position, bool isNetworked = false, bool isServerSide = false);
 
-			GameObject* AddPlayerToWorld(const Vector3& position, bool isNetworked = false, bool isServerSide = false);
+			GameObject* AddPlayerToWorld(const Vector3& position, bool isNetworked = false, bool isServerSide = false, bool isThisPlayer = true, int networkID=0);
 			GameObject* AddEnemyToWorld(const Vector3& position, std::vector<Vector3>& patrolPoints, bool isNetworked = false, bool isServerSide = false);
 			GameObject* AddKeyDoorPairToWorld(const Vector3& keyPosition,const Vector3& doorPosition, const Vector4& colour, bool isNetworked = false, bool isServerSide = false);
 
@@ -156,12 +158,20 @@ namespace NCL {
 			int port;
 			GameServer* server;
 			GameClient* client;
+
+			int thisPlayerID;
 			
 			bool isClient;
-
+			bool hasClientInitialised;
 			int currentNetworkObjectID = 0;
 
+			int numPlayers;
 			std::map<int, GameObject*> playerMap;
+			int playerIDs[4];
+			std::map<int, bool[8]> playerInputsMap;
+			std::map<int, CameraInputStruct> playerCameraMap;
+
+			int prevClient = -1;
 
 		};
 	}
