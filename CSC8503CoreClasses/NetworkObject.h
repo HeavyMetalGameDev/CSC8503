@@ -50,8 +50,10 @@ namespace NCL::CSC8503 {
 	};
 
 	struct GameInfoPacket : public GamePacket {
+		int objectID;
+		int health;
 		int points;
-		int collectablesRemaining;
+		int collectables;
 
 		GameInfoPacket() {
 			type = Game_info;

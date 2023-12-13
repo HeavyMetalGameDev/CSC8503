@@ -7,6 +7,8 @@
 #include "PlayerValuesComponent.h"
 #include "GameWorld.h"
 #include "MovementInput.h"
+#include "GameServer.h"
+#include "ServerPlayerComponent.h"
 #include <map>
 #include <vector>
 namespace NCL::CSC8503 {

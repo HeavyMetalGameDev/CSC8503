@@ -243,7 +243,6 @@ void TutorialGame::UpdateGameAsServer(float dt) {
 	renderer->Update(dt);
 	ApplyPlayerInput();
 	physics->Update(dt);
-	physics->Update(dt);
 
 	world->OperateOnContents([&](GameObject* g)->void
 		{if (g->GetNetworkObject()) {
@@ -463,7 +462,17 @@ void TutorialGame::ReceivePacket(int type, GamePacket* payload, int source) {
 				PlayerConnectServerAckPacket* realPacket = (PlayerConnectServerAckPacket*)payload;
 				AddPlayerToWorld(Vector3(80, 0, 10), true, false, false, realPacket->playerNetIDs[realPacket->numPlayers - 1]);
 			}
-
+			break;
+		}
+		case Game_info: {
+			GameInfoPacket* realPacket = (GameInfoPacket*)payload;
+			ClientPlayerComponent* c;
+			if (playerMap[realPacket->objectID]->TryGetComponent<ClientPlayerComponent>(c)) {
+				c->SetCollectables(realPacket->collectables);
+				c->SetHealth(realPacket->health);
+				c->SetPoints(realPacket->points);
+			}
+			break;
 		}
 		}
 	}
@@ -1055,7 +1064,7 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position, bool isNetwo
 			TriggerComponent* tc = new TriggerComponent();
 
 			pickupObject->AddComponent(tc);
-			ServerPlayerComponent* si = new ServerPlayerComponent(character, pickupObject, tc, playerInputsMap[currentNetworkObjectID], &playerCameraMap[currentNetworkObjectID],world);
+			ServerPlayerComponent* si = new ServerPlayerComponent(character, pickupObject, tc, playerInputsMap[currentNetworkObjectID], &playerCameraMap[currentNetworkObjectID],world,server);
 
 			character->AddComponent(si);
 
@@ -1068,7 +1077,9 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position, bool isNetwo
 			if (isThisPlayer) {
 				character->SetCamera(&world->GetMainCamera());
 				ClientInputComponent* ci = new ClientInputComponent(character, &world->GetMainCamera(), character->GetNetworkObject());
+				ClientPlayerComponent* cp = new ClientPlayerComponent();
 				character->AddComponent(ci);
+				character->AddComponent(cp);
 				player = character;
 
 				character->SetNetworkObject(new NetworkObject(*character, networkID));

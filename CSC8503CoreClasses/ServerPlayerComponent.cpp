@@ -134,4 +134,15 @@ namespace NCL::CSC8503 {
 		heldObject->GetPhysicsObject()->SetAwake();
 		heldObject->GetPhysicsObject()->SetPhysMat(physMatCache);
 	}
+
+	void ServerPlayerComponent::SendInfoPacket() {
+		GameInfoPacket* g = new GameInfoPacket();
+
+		g->objectID = gameObject->GetNetworkObject()->GetNetworkID();
+		g->collectables = collectables;
+		g->health = health;
+		g->points = points;
+
+		server->SendGlobalPacket(*g);
+	}
 }

@@ -36,6 +36,7 @@
 #include "ClientInputComponent.h"
 #include "ServerPlayerComponent.h"
 #include "ServerStateMachineEnemyComponent.h"
+#include "ClientPlayerComponent.h"
 #include "Assets.h"
 
 #include "PositionConstraint.h"

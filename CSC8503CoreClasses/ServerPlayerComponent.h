@@ -7,6 +7,8 @@
 #include "ClientInputComponent.h"
 #include "PhysicsObject.h"
 #include "Quaternion.h"
+#include "GameServer.h"
+#include "NetworkObject.h"
 #include "Debug.h"
 #include <algorithm>
 #include <math.h>
@@ -14,10 +16,11 @@ namespace NCL::CSC8503 {
 	class ServerPlayerComponent : public Component
 	{
 	public:
-		ServerPlayerComponent(GameObject* g, GameObject* s, TriggerComponent* t, bool* ci,CameraInputStruct* camInput, GameWorld* gw) { 
+		ServerPlayerComponent(GameObject* g, GameObject* s, TriggerComponent* t, bool* ci,CameraInputStruct* camInput, GameWorld* gw, GameServer* ser) { 
             gameObject = g;
             sphereTrigger = s;
             tc = t;
+            server = ser;
             inputs = ci; 
             cameraValues = camInput;
             worldRef = gw;
@@ -29,10 +32,27 @@ namespace NCL::CSC8503 {
         void Update(float dt)override;
         void PhysicsUpdate(float dt)override;
 
+        void SendInfoPacket();
+
+        void SetPoints(int p) { points = p; }
+        void AddPoints(int p) { points += p; }
+        int GetPoints() { return points; }
+
+        void SetHealth(int h) { health = h; }
+        void ChangeHealth(int h) { health += h; }
+        int GetHealth() { return health; }
+
+        void AddPickup() { collectables++; }
+
         void ApplyForceToObject();
         void OnObjectDrop();
 
 	protected:
+        int points=0;
+        int health=100;
+        int collectables=0;
+
+        GameServer* server;
 		GameObject* sphereTrigger;
 		TriggerComponent* tc;
 		bool* inputs;

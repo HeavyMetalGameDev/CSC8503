@@ -47,8 +47,13 @@ void ServerStateMachineEnemyComponent::ShootPlayer(float dt) {
 	if (shootTimer >= 1.0f) {
 		shootTimer -= 1.0f;
 		PlayerValuesComponent* pvc;
+		ServerPlayerComponent* svc;
 		if (currentPlayer->TryGetComponent<PlayerValuesComponent>(pvc)) {
 			pvc->ChangeHealth(-5);
+		}
+		else if (currentPlayer->TryGetComponent<ServerPlayerComponent>(svc)) {
+			svc->ChangeHealth(-5);
+			svc->SendInfoPacket();
 		}
 		Debug::DrawLine(currentPlayer->GetTransform().GetPosition(), gameObject->GetTransform().GetPosition(), Debug::RED, 0.5f);
 	}
