@@ -103,14 +103,14 @@ bool NetworkObject::WriteFullPacket(GamePacket**p) {
 
 bool NetworkObject::WriteClientPacket(GamePacket** p,ClientInputComponent* c) {
 	ClientPacket* cp = new ClientPacket();
-	cp->buttonstates[0] = c->buttoninputs[0]==true?'1':'0';
-	cp->buttonstates[1] = c->buttoninputs[1] == true ? '1' : '0';
-	cp->buttonstates[2] = c->buttoninputs[2] == true ? '1' : '0';
-	cp->buttonstates[3] = c->buttoninputs[3] == true ? '1' : '0';
-	cp->buttonstates[4] = c->buttoninputs[4] == true ? '1' : '0';
-	cp->buttonstates[5] = c->buttoninputs[5] == true ? '1' : '0';
-	cp->buttonstates[6] = c->buttoninputs[6] == true ? '1' : '0';
-	cp->buttonstates[7] = c->buttoninputs[7] == true ? '1' : '0';
+	cp->buttonstates[0] = c->buttoninputs[0];
+	cp->buttonstates[1] = c->buttoninputs[1];
+	cp->buttonstates[2] = c->buttoninputs[2];
+	cp->buttonstates[3] = c->buttoninputs[3];
+	cp->buttonstates[4] = c->buttoninputs[4];
+	cp->buttonstates[5] = c->buttoninputs[5];
+	cp->buttonstates[6] = c->buttoninputs[6];
+	cp->buttonstates[7] = c->buttoninputs[7];
 	cp->camPitch = c->cameraPitch;
 	cp->camYaw = c->cameraYaw;
 

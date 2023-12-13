@@ -57,7 +57,7 @@ void TutorialGame::InitialiseAssets() {
 
 	InitCamera();
 	
-	InitWorldSinglePlayer();
+	//InitWorldSinglePlayer();
 }
 
 TutorialGame::~TutorialGame()	{
@@ -76,7 +76,7 @@ TutorialGame::~TutorialGame()	{
 }
 
 void TutorialGame::UpdateGame(float dt) {
-
+	deltaTime = dt;
 	if (gameTimer <= 0)SetState(STATE_LOSE);
 	switch (GetState()) {
 	case STATE_MENU:
@@ -144,6 +144,7 @@ void TutorialGame::UpdateGame(float dt) {
 }
 
 void TutorialGame::UpdateGameAsClient(float dt) {
+	deltaTime = dt;
 	client->UpdateClient();
 
 	world->GetMainCamera().UpdateCamera(dt);
@@ -163,7 +164,7 @@ void TutorialGame::UpdateGameAsClient(float dt) {
 }
 
 void TutorialGame::UpdateGameAsServer(float dt) {
-
+	deltaTime = dt;
 	server->UpdateServer();
 
 	//std::cout << "UPDATE SERVER!!!!!\n";
@@ -297,7 +298,7 @@ void TutorialGame::InitWorldSinglePlayer() {
 	InitDefaultFloor();
 	
 	//STARTING ROOM----------------------------------------------------------------------------------------------------------------------
-	//AddPlayerToWorld(Vector3(80, 0, 10),false,false);
+	AddPlayerToWorld(Vector3(80, 0, 10),false,false);
 	AddOBBCubeToWorld(Vector3(70, -5, 10),Vector3(3,1,3), false, false);
 	AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1),0, false, false);
 	AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f, false, false);
@@ -310,11 +311,11 @@ void TutorialGame::InitWorldSinglePlayer() {
 	AddJumppad(Vector3(20, -5, 40), false, false);
 	//AddSphereToWorld(Vector3(1, 0, 0), .3f, 0.7f);
 
-	/*std::vector<Vector3> enemyPath;
+	std::vector<Vector3> enemyPath;
 	enemyPath.emplace_back(Vector3(60, 0, 40));
 	enemyPath.emplace_back(Vector3(60, 0, 60));
 	AddEnemyToWorld(Vector3(60, 0, 40), enemyPath, false, false);
-	AddGrappleUnlockerToWorld(Vector3(80, 0, 80), false, false);*/
+	AddGrappleUnlockerToWorld(Vector3(80, 0, 80), false, false);
 
 
 	AddTreasure(Vector3(80, 20, 10), false, false);
@@ -424,7 +425,7 @@ void TutorialGame::ReceivePacket(int type, GamePacket* payload, int source) {
 			FullPacket* realPacket = (FullPacket*)payload;
 			world->OperateOnContents([&](GameObject* g) {
 				if (g->GetNetworkObject()) {
-					if (g->GetNetworkObject()->GetNetworkID() == realPacket->objectID-1) {
+					if (g->GetNetworkObject()->GetNetworkID() == realPacket->objectID) {
 						g->GetNetworkObject()->ReadFullPacket(*realPacket);
 					}
 				}
@@ -447,10 +448,23 @@ void TutorialGame::ReceivePacket(int type, GamePacket* payload, int source) {
 				<< realPacket->buttonstates[7] << "  "
 				<< realPacket->camPitch << "  "
 				<< realPacket->camYaw << "\n";
+			ProcessClientInput(realPacket);
 			break;
 		}
 		}
 	}
+}
+void TutorialGame::ProcessClientInput(ClientPacket* p) {
+	GameObject* playerObject = playerMap[p->objectID];
+	Transform playerTransform = playerObject->GetTransform();
+	Vector3 inputDirection(p->buttonstates[3] - p->buttonstates[1], 0, p->buttonstates[0] - p->buttonstates[2]);
+	Matrix4 yawRotation = Matrix4::Rotation(p->camYaw, Vector3(0, 1, 0));
+
+	Vector3 direction;
+	direction += yawRotation * Vector3(0, 0, inputDirection.z);
+	direction += yawRotation * Vector3(inputDirection.x, 0, 0);
+
+	playerObject->GetPhysicsObject()->AddForce(direction * deltaTime *7000.0f);
 }
 
 void TutorialGame::BridgeConstraintTest() {
@@ -632,10 +646,7 @@ GameObject* TutorialGame::AddTreasurePoint(const Vector3& position, bool isNetwo
 		TreasureReturnPointComponent* trp = new TreasureReturnPointComponent(world);
 		trigger->AddComponent(trp);
 	}
-	if (isNetworked) {
-		trigger->SetNetworkObject(new NetworkObject(*trigger, currentNetworkObjectID));
-		currentNetworkObjectID++;
-	}
+
 
 	//PhysicsMaterial* spherePhys;
 	//if (world->TryGetPhysMat("Bouncy", spherePhys))so->SetPhysMat(spherePhys);
@@ -954,6 +965,7 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position, bool isNetwo
 	}
 	else {
 		character->SetNetworkObject(new NetworkObject(*character, currentNetworkObjectID));
+		playerMap[currentNetworkObjectID] = character;
 		currentNetworkObjectID++;
 		if (isServerSide) {
 			character->SetPhysicsObject(new PhysicsObject(&character->GetTransform(), character->GetBoundingVolume(), true, false, PLAYER_LAYER));
@@ -967,6 +979,7 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position, bool isNetwo
 			world->TryGetPhysMat("Bouncy", bouncyPhys);
 		}
 		else {
+			character->SetCamera(&world->GetMainCamera());
 			ClientInputComponent* ci = new ClientInputComponent(character, &world->GetMainCamera(),character->GetNetworkObject());
 			character->AddComponent(ci);
 			player = character;

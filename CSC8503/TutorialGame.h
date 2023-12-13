@@ -65,6 +65,8 @@ namespace NCL {
 			void InitCamera();
 			void UpdateKeys();
 
+			void ProcessClientInput(ClientPacket* p);
+
 
 
 			/*
@@ -119,6 +121,7 @@ namespace NCL {
 			bool inSelectionMode;
 
 			float		forceMagnitude;
+			float deltaTime;
 
 			GameObject* selectionObject = nullptr;
 			GameObject* player = nullptr;
@@ -157,6 +160,8 @@ namespace NCL {
 			bool isClient;
 
 			int currentNetworkObjectID = 0;
+
+			std::map<int, GameObject*> playerMap;
 
 		};
 	}

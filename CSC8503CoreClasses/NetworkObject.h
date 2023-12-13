@@ -31,7 +31,7 @@ namespace NCL::CSC8503 {
 
 	struct ClientPacket : public GamePacket {
 		int		objectID;
-		char	buttonstates[8];
+		bool	buttonstates[8];
 		//buttonstates[0] = W
 		//buttonstates[1] = A
 		//buttonstates[2] = S

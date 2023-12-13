@@ -92,6 +92,10 @@ set(Components
     "TreasureReturnPointComponent.h"
     "ClientInputComponent.cpp"
     "ClientInputComponent.h"
+    "BehaviourTreeEnemyComponent.cpp"
+    "BehaviourTreeEnemyComponent.h"
+    "ClientPlayerComponent.cpp"
+    "ClientPlayerComponent.h"
 )
 source_group("Components" FILES ${Components})
 
