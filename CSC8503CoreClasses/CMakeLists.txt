@@ -98,6 +98,8 @@ set(Components
     "ClientPlayerComponent.h"
     "ServerPlayerComponent.cpp"
     "ServerPlayerComponent.h"
+    "ServerStateMachineEnemyComponent.cpp"
+    "ServerStateMachineEnemyComponent.h"
 )
 source_group("Components" FILES ${Components})
 

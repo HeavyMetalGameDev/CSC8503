@@ -15,6 +15,10 @@ namespace NCL::CSC8503 {
 				world->RemoveGameObject(gameObject);
 				
 			}
+			else {
+				gameObject->SetActive(false);
+				world->RemoveGameObject(gameObject);
+			}
 		}
 	}
 }

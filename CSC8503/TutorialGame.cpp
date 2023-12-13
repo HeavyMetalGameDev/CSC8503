@@ -77,7 +77,7 @@ TutorialGame::~TutorialGame()	{
 
 void TutorialGame::UpdateGame(float dt) {
 	deltaTime = dt;
-	if (gameTimer <= 0)SetState(STATE_LOSE);
+	
 	switch (GetState()) {
 	case STATE_MENU:
 		renderer->Update(dt);
@@ -102,6 +102,7 @@ void TutorialGame::UpdateGame(float dt) {
 		return;
 		break;
 	}
+	if (gameTimer <= 0)SetState(STATE_LOSE);
 
 	gameTimer -= dt;
 	Debug::Print("Time:" + std::to_string(((int)gameTimer)), { 5, 5 });
@@ -153,6 +154,9 @@ void TutorialGame::UpdateGameAsClient(float dt) {
 		delete connectPacket;
 		return;
 	}
+	Debug::Print(".", { 49,50 });
+	Debug::Print("Time:" + std::to_string(((int)gameTimer)), { 5, 5 });
+	Debug::Print("/" + std::to_string(totalPickups), Vector2(90, 10), Debug::YELLOW);
 	deltaTime = dt;
 	
 
@@ -345,6 +349,7 @@ void TutorialGame::InitWorldClient() {
 	client->RegisterPacketHandler(String_Message, this);
 	client->RegisterPacketHandler(Full_State, this);
 	client->RegisterPacketHandler(Player_Connected, this);
+	client->RegisterPacketHandler(Game_info, this);
 
 	bool canConnect = client->Connect(127, 0, 0, 1, port);
 	world->ClearAndErase();
@@ -359,7 +364,6 @@ void TutorialGame::InitWorldClient() {
 
 
 	//STARTING ROOM----------------------------------------------------------------------------------------------------------------------
-	//AddPlayerToWorld(Vector3(80, 0, 10),true,false);
 	AddOBBCubeToWorld(Vector3(70, -5, 10), Vector3(3, 1, 3),0, true, false);
 	AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1), 0, true, false);
 	AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f, true, false);
@@ -372,11 +376,11 @@ void TutorialGame::InitWorldClient() {
 	AddJumppad(Vector3(20, -5, 40), true, false);
 	//AddSphereToWorld(Vector3(1, 0, 0), .3f, 0.7f);
 
-	/*std::vector<Vector3> enemyPath;
+	std::vector<Vector3> enemyPath;
 	enemyPath.emplace_back(Vector3(60, 0, 40));
 	enemyPath.emplace_back(Vector3(60, 0, 60));
-	AddEnemyToWorld(Vector3(60, 0, 40), enemyPath, false, false);
-	AddGrappleUnlockerToWorld(Vector3(80, 0, 80), false, false);*/
+	AddEnemyToWorld(Vector3(60, 0, 40), enemyPath, true, false);
+	AddGrappleUnlockerToWorld(Vector3(80, 0, 80), true, false);
 
 
 	AddTreasure(Vector3(80, 20, 10), true, false);
@@ -402,7 +406,6 @@ void TutorialGame::InitWorldServer() {
 	InitDefaultFloor();
 
 	//STARTING ROOM----------------------------------------------------------------------------------------------------------------------
-	//AddPlayerToWorld(Vector3(80, 0, 10),true,true);
 	AddOBBCubeToWorld(Vector3(70, -5, 10), Vector3(3, 1, 3), 0, true,true);
 	AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1), 0, true, true);
 	AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f, true, true);
@@ -415,11 +418,11 @@ void TutorialGame::InitWorldServer() {
 	AddJumppad(Vector3(20, -5, 40), true, true);
 	//AddSphereToWorld(Vector3(1, 0, 0), .3f, 0.7f);
 
-	/*std::vector<Vector3> enemyPath;
+	std::vector<Vector3> enemyPath;
 	enemyPath.emplace_back(Vector3(60, 0, 40));
 	enemyPath.emplace_back(Vector3(60, 0, 60));
-	AddEnemyToWorld(Vector3(60, 0, 40), enemyPath, false, false);
-	AddGrappleUnlockerToWorld(Vector3(80, 0, 80), false, false);*/
+	AddEnemyToWorld(Vector3(60, 0, 40), enemyPath, true, true);
+	AddGrappleUnlockerToWorld(Vector3(80, 0, 80), true, true);
 
 
 	AddTreasure(Vector3(80, 20, 10), true, true);
@@ -486,6 +489,7 @@ void TutorialGame::ReceivePacket(int type, GamePacket* payload, int source) {
 			PlayerConnectPacket* realPacket = (PlayerConnectPacket*)payload;
 			numPlayers++;
 			GameObject* player = AddPlayerToWorld(Vector3(80, 0, 10), true, true);
+			playerObjects.push_back(player);
 			//add a player to world
 			GamePacket* p;
 			playerIDs[numPlayers-1] = currentNetworkObjectID - 1;
@@ -735,8 +739,11 @@ GameObject* TutorialGame::AddSphereTriggerToWorld(const Vector3& position, float
 		.SetScale(sphereSize)
 		.SetPosition(position);
 
-	if (!isNetworked || isServerSide) {
+	if (isServerSide) {
 		sphere->SetRenderObject(new RenderObject(&sphere->GetTransform(), sphereMesh, basicTex, basicShader));
+	}
+	if (!isNetworked || isServerSide) {
+		
 		sphere->SetPhysicsObject(new PhysicsObject(&sphere->GetTransform(), sphere->GetBoundingVolume(), true, true, PICKUP_SPHERE_LAYER));
 
 		//PhysicsMaterial* spherePhys;
@@ -1095,22 +1102,50 @@ GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position, std::vector<V
 		.SetPosition(position);
 
 	character->SetRenderObject(new RenderObject(&character->GetTransform(), capsuleMesh, nullptr, basicShader));
-	character->SetPhysicsObject(new PhysicsObject(&character->GetTransform(), character->GetBoundingVolume()));
 	character->GetRenderObject()->SetColour(Debug::RED);
+	if (!isNetworked) {
+		character->SetPhysicsObject(new PhysicsObject(&character->GetTransform(), character->GetBoundingVolume()));
 
-	PhysicsObject* co = character->GetPhysicsObject();
-	co->SetInverseMass(inverseMass);
-	co->InitSphereInertia();
-	PhysicsMaterial* enemyPhys;
-	if (world->TryGetPhysMat("Player", enemyPhys))co->SetPhysMat(enemyPhys);
+		PhysicsObject* co = character->GetPhysicsObject();
+		co->SetInverseMass(inverseMass);
+		co->InitSphereInertia();
+		PhysicsMaterial* enemyPhys;
+		if (world->TryGetPhysMat("Player", enemyPhys))co->SetPhysMat(enemyPhys);
 
-	MovementApplierComponent* ma = new MovementApplierComponent(&character->GetTransform(), character->GetPhysicsObject(), 7000.0f);
-	StateMachineEnemyComponent* sme = new StateMachineEnemyComponent(character,patrolPoints);
+		MovementApplierComponent* ma = new MovementApplierComponent(&character->GetTransform(), character->GetPhysicsObject(), 7000.0f);
+		StateMachineEnemyComponent* sme = new StateMachineEnemyComponent(character, patrolPoints);
 
-	ma->SetInputComponent(sme);
+		ma->SetInputComponent(sme);
 
-	character->AddComponent(ma);
-	character->AddComponent(sme);
+		character->AddComponent(ma);
+		character->AddComponent(sme);
+
+	}
+	else {
+		character->SetNetworkObject(new NetworkObject(*character, currentNetworkObjectID));
+		currentNetworkObjectID++;
+		if (isServerSide) {
+			character->SetPhysicsObject(new PhysicsObject(&character->GetTransform(), character->GetBoundingVolume()));
+
+			PhysicsObject* co = character->GetPhysicsObject();
+			co->SetInverseMass(inverseMass);
+			co->InitSphereInertia();
+			PhysicsMaterial* enemyPhys;
+			if (world->TryGetPhysMat("Player", enemyPhys))co->SetPhysMat(enemyPhys);
+
+			MovementApplierComponent* ma = new MovementApplierComponent(&character->GetTransform(), character->GetPhysicsObject(), 7000.0f);
+			ServerStateMachineEnemyComponent* ssme = new ServerStateMachineEnemyComponent(character, patrolPoints,world);
+			ssme->SetPlayerVector(&playerObjects);
+
+			ma->SetInputComponent(ssme);
+
+			character->AddComponent(ma);
+			character->AddComponent(ssme);
+		}
+	}
+	
+	
+	
 
 	world->AddGameObject(character);
 

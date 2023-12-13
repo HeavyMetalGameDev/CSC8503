@@ -125,10 +125,20 @@ public:
 		g = t;
 	}
 	PushdownResult OnUpdate(float dt, PushdownState** newState) override {
-		Debug::Print("1: Start Game singleplayer", Vector2(40, 30));
-		Debug::Print("2: Start Game as client", Vector2(40, 45));
-		Debug::Print("3: Start Game as server", Vector2(40, 60));
-		Debug::Print("ESCAPE: Exit Game", Vector2(40, 75));
+		textTimer += dt;
+		Vector4 col1 = Debug::CYAN * sin(textTimer) - Debug::MAGENTA * (sin(textTimer));
+		Vector4 col2 = Debug::MAGENTA * sin(textTimer) - Debug::CYAN * (sin(textTimer));
+		Debug::Print("1: Start Game singleplayer", Vector2(25.2, 30.2),col1);
+		Debug::Print("1: Start Game singleplayer", Vector2(25, 30), col2);
+
+		Debug::Print("2: Start Game as client", Vector2(25.2, 45.2), col1);
+		Debug::Print("2: Start Game as client", Vector2(25, 45), col2);
+
+		Debug::Print("3: Start Game as server", Vector2(25.2, 60.2), col1);
+		Debug::Print("3: Start Game as server", Vector2(25, 60), col2);
+
+		Debug::Print("ESCAPE: Exit Game", Vector2(25.2, 75.2),col1);
+		Debug::Print("ESCAPE: Exit Game", Vector2(25, 75), col2);
 		g->UpdateGame(0);
 		if (Window::GetKeyboard()->KeyPressed(KeyCodes::NUM1)) {
 			*newState = new SinglePlayerGameScreen(g);
@@ -149,9 +159,11 @@ public:
 	}
 	void OnAwake() override {
 		g->SetState(GameState::STATE_MENU);
+		
 	}
 protected:
 	TutorialGame* g;
+	float textTimer = 0;
 };
 
 void RunPushdownAutomata(Window* w) {
@@ -177,26 +189,6 @@ void TestPathfinding() {
 	while (outPath.PopWaypoint(pos))testNodes.push_back(pos);
 }
 
-
-
-void TestStateMachine() {
-	StateMachine* testMachine = new StateMachine();
-	int data = 0;
-
-	State* a = new State([&](float dt)->void {std::cout << "STATE A\n"; data++; });
-
-	State* b = new State([&](float dt)->void {std::cout << "STATE B\n"; data--; });
-
-	StateTransition* stateAB = new StateTransition(a, b, [&](void)->bool {return data > 10; });
-	StateTransition * stateBA = new StateTransition(b, a, [&](void)->bool {return data < 0; });
-
-	testMachine->AddState(a);
-	testMachine->AddState(b);
-	testMachine->AddTransition(stateAB);
-	testMachine->AddTransition(stateBA);
-
-	for (int i = 0; i < 100; i++)testMachine->Update(1.0f);
-}
 
 void TestBehaviourTree() {
 	float behaviourTimer;

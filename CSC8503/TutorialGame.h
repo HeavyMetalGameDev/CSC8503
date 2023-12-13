@@ -35,6 +35,7 @@
 #include "TreasureReturnPointComponent.h"
 #include "ClientInputComponent.h"
 #include "ServerPlayerComponent.h"
+#include "ServerStateMachineEnemyComponent.h"
 #include "Assets.h"
 
 #include "PositionConstraint.h"
@@ -167,6 +168,7 @@ namespace NCL {
 
 			int numPlayers;
 			std::map<int, GameObject*> playerMap;
+			std::vector<GameObject*>playerObjects;
 			int playerIDs[4];
 			std::map<int, bool[8]> playerInputsMap;
 			std::map<int, CameraInputStruct> playerCameraMap;

@@ -50,13 +50,21 @@ namespace NCL::CSC8503 {
 	};
 
 	struct GameInfoPacket : public GamePacket {
-		int		objectID;
 		int points;
 		int collectablesRemaining;
 
 		GameInfoPacket() {
 			type = Game_info;
 			size = sizeof(GameInfoPacket) - sizeof(GamePacket);
+		}
+	};
+
+	struct DisableObjectPacket : public GamePacket {
+		int objectID;
+
+		DisableObjectPacket() {
+			type = Game_info;
+			size = sizeof(DisableObjectPacket) - sizeof(GamePacket);
 		}
 	};
 
