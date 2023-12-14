@@ -4,7 +4,7 @@
 #include "GameWorld.h"
 #include "PhysicsObject.h"
 namespace NCL::CSC8503 {
-    class PlayerInputComponent : public Component
+    class PlayerInputComponent : public Component //this is only used in single player, a different component is used for multiplayer
     {
     public:
         PlayerInputComponent(GameObject* go, Camera* c) { gameObject = go; camera = c;}
@@ -19,7 +19,7 @@ namespace NCL::CSC8503 {
         bool hasJumped=false;
         bool isGrappling = false;
         bool isGrapplingStatic = false;
-        bool hasUnlockedGrapple = true;
+        bool hasUnlockedGrapple = false;
         float jumpPower = 15;
         GameWorld* worldRef;
         PhysicsObject* physObject;

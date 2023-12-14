@@ -16,19 +16,15 @@ namespace NCL::CSC8503 {
 			Vector3 pullDirection = (gameObject->GetTransform().GetPosition() - treasure->GetTransform().GetPosition()).Normalised();
 			treasurePhys->SetAwake();
 			treasurePhys->AddForce(pullDirection * PULL_TREASURE_AMOUNT *dt);
-			std::cout << "PULLING!\n";
 			return Success;
 			}
 		);
 
 		BehaviourAction* isTreasureStolen = new BehaviourAction("Is Treasure Stolen", [&](float dt, BehaviourState state)->BehaviourState {
-			std::cout << "Checking if stolen...\n";
 			if ((treasure->GetTransform().GetPosition() - treasureStartPoint).LengthSquared() > DISTANCE_BEFORE_STOLEN) {
-				std::cout << "STOLEN!\n";
 				return Success;
 			}
 			else {
-				std::cout << "NOT STOLEN!\n";
 				return Failure; 
 			}
 			}
@@ -39,7 +35,6 @@ namespace NCL::CSC8503 {
 			float colourMult = (sin(colourTimer) + 1) * 0.5f;
 			Vector4 colour = Debug::RED * colourMult + Debug::BLUE * (1 - colourMult);
 			gameObject->GetRenderObject()->SetColour(colour);
-			std::cout << "PULSING\n";
 			return Success;
 			}
 		);
@@ -47,7 +42,6 @@ namespace NCL::CSC8503 {
 		BehaviourAction* stayAtHome = new BehaviourAction("Stay At Home", [&](float dt, BehaviourState state)->BehaviourState {
 			Vector3 direction = (homePoint - gameObject->GetTransform().GetPosition()).Normalised();
 			thisPhys->AddForce(direction * PULL_TREASURE_AMOUNT * dt);
-			std::cout << "STAYING\n";
 			return Success;
 			}
 		);
@@ -58,7 +52,6 @@ namespace NCL::CSC8503 {
 			Vector3 direction = (treasure->GetTransform().GetPosition() - gameObject->GetTransform().GetPosition()).Normalised();
 			thisPhys->SetAwake();
 			thisPhys->AddForce(direction * PULL_TREASURE_AMOUNT * dt);
-			std::cout << "CHASING!\n";
 			return Success;
 			}
 		);

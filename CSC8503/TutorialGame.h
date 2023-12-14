@@ -67,28 +67,10 @@ namespace NCL {
 			void InitialiseAssets();
 
 			void InitCamera();
-			void UpdateKeys();
-
 			void ProcessClientInput(ClientPacket* p);
 			void ApplyPlayerInput();
 
-
-
-			/*
-			These are some of the world/object creation functions I created when testing the functionality
-			in the module. Feel free to mess around with them to see different objects being created in different
-			test scenarios (constraints, collision types, and so on). 
-			*/
-			void InitSphereGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing, float radius);
-			void InitMixedGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing);
-			void InitCubeGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing, const Vector3& cubeDims);
-
-			void InitDefaultFloor();
-
-			bool SelectObject();
-			void MoveSelectedObject();
-
-			
+			void InitDefaultFloor();			
 
 			GameObject* AddFloorToWorld(const Vector3& position);
 			GameObject* AddSphereToWorld(const Vector3& position, float radius, float inverseMass = 10.0f, bool isNetworked=false,bool isServerSide = false);
@@ -159,8 +141,8 @@ namespace NCL {
 
 			//networking functionality
 			int port;
-			GameServer* server;
-			GameClient* client;
+			GameServer* server; //unused if this is a client instance
+			GameClient* client;//unused if this is a server instance
 
 			int thisPlayerID;
 			
@@ -169,11 +151,11 @@ namespace NCL {
 			int currentNetworkObjectID = 0;
 
 			int numPlayers;
-			std::map<int, GameObject*> playerMap;
-			std::vector<GameObject*>playerObjects;
-			int playerIDs[4];
-			std::map<int, bool[8]> playerInputsMap;
-			std::map<int, CameraInputStruct> playerCameraMap;
+			std::map<int, GameObject*> playerMap; // networkID - game object pair
+			std::vector<GameObject*>playerObjects; //all player objects
+			int playerIDs[4]; //all player network ids
+			std::map<int, bool[8]> playerInputsMap; // maps networkID to the last recieved player inputs for that player
+			std::map<int, CameraInputStruct> playerCameraMap; //maps network id to the last recieded camera inputs for that player
 
 			int prevClient = -1;
 

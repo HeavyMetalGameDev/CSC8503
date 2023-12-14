@@ -109,29 +109,6 @@ void TutorialGame::UpdateGame(float dt) {
 	Debug::Print("/"+std::to_string(totalPickups), Vector2(90, 10), Debug::YELLOW);
 	world->GetMainCamera().UpdateCamera(dt);
 
-	UpdateKeys();
-
-
-	RayCollision closestCollision;
-	if (Window::GetKeyboard()->KeyPressed(KeyCodes::K) && selectionObject) {
-		Vector3 rayPos;
-		Vector3 rayDir;
-
-		rayDir = selectionObject->GetTransform().GetOrientation() * Vector3(0, 0, -1);
-
-		rayPos = selectionObject->GetTransform().GetPosition();
-
-		Ray r = Ray(rayPos, rayDir);
-
-		if (world->Raycast(r, closestCollision, true, selectionObject)) {
-			if (objClosest) {
-				objClosest->GetRenderObject()->SetColour(Vector4(1, 1, 1, 1));
-			}
-			objClosest = (GameObject*)closestCollision.node;
-
-			objClosest->GetRenderObject()->SetColour(Vector4(1, 0, 1, 1));
-		}
-	}
 
 	world->UpdateWorld(dt);
 	renderer->Update(dt);
@@ -147,8 +124,10 @@ void TutorialGame::UpdateGame(float dt) {
 
 void TutorialGame::UpdateGameAsClient(float dt) {
 	client->UpdateClient();
-	
-	if (!hasClientInitialised) {
+
+	//we send packets to the server asking to join until the connection is esablished and the server replies
+
+	if (!hasClientInitialised) { 
 		PlayerConnectPacket* connectPacket = new PlayerConnectPacket();
 		client->SendPacket(*connectPacket);
 		delete connectPacket;
@@ -162,7 +141,6 @@ void TutorialGame::UpdateGameAsClient(float dt) {
 
 	world->GetMainCamera().UpdateCamera(dt);
 
-	UpdateKeys();
 	ClientInputComponent* inp;
 	if (!player)return;
 	if (player->TryGetComponent<ClientInputComponent>(inp)) {
@@ -181,7 +159,6 @@ void TutorialGame::UpdateGameAsServer(float dt) {
 	deltaTime = dt;
 	server->UpdateServer();
 
-	//std::cout << "UPDATE SERVER!!!!!\n";
 	if (gameTimer <= 0)SetState(STATE_LOSE);
 	switch (GetState()) {
 	case STATE_MENU:
@@ -213,36 +190,12 @@ void TutorialGame::UpdateGameAsServer(float dt) {
 	Debug::Print("/" + std::to_string(totalPickups), Vector2(90, 10), Debug::YELLOW);
 	world->GetMainCamera().UpdateCamera(dt);
 
-	SelectObject();
-	MoveSelectedObject();
-	UpdateKeys();
-
-
-	RayCollision closestCollision;
-	if (Window::GetKeyboard()->KeyPressed(KeyCodes::K) && selectionObject) {
-		Vector3 rayPos;
-		Vector3 rayDir;
-
-		rayDir = selectionObject->GetTransform().GetOrientation() * Vector3(0, 0, -1);
-
-		rayPos = selectionObject->GetTransform().GetPosition();
-
-		Ray r = Ray(rayPos, rayDir);
-
-		if (world->Raycast(r, closestCollision, true, selectionObject)) {
-			if (objClosest) {
-				objClosest->GetRenderObject()->SetColour(Vector4(1, 1, 1, 1));
-			}
-			objClosest = (GameObject*)closestCollision.node;
-
-			objClosest->GetRenderObject()->SetColour(Vector4(1, 0, 1, 1));
-		}
-	}
-
 	world->UpdateWorld(dt);
 	renderer->Update(dt);
 	ApplyPlayerInput();
 	physics->Update(dt);
+
+	//here we send full packets for each netwoek object
 
 	world->OperateOnContents([&](GameObject* g)->void
 		{if (g->GetNetworkObject()) {
@@ -256,39 +209,6 @@ void TutorialGame::UpdateGameAsServer(float dt) {
 
 	renderer->Render();
 	Debug::UpdateRenderables(dt);
-}
-
-void TutorialGame::UpdateKeys() {
-	if (Window::GetKeyboard()->KeyPressed(KeyCodes::F1)) {
-		InitWorldSinglePlayer(); //We can reset the simulation at any time with F1
-		selectionObject = nullptr;
-	}
-
-	if (Window::GetKeyboard()->KeyPressed(KeyCodes::F2)) {
-		InitCamera(); //F2 will reset the camera to a specific default place
-	}
-
-	if (Window::GetKeyboard()->KeyPressed(KeyCodes::G)) {
-		useGravity = !useGravity; //Toggle gravity!
-		physics->UseGravity(useGravity);
-	}
-	//Running certain physics updates in a consistent order might cause some
-	//bias in the calculations - the same objects might keep 'winning' the constraint
-	//allowing the other one to stretch too much etc. Shuffling the order so that it
-	//is random every frame can help reduce such bias.
-	if (Window::GetKeyboard()->KeyPressed(KeyCodes::F9)) {
-		world->ShuffleConstraints(true);
-	}
-	if (Window::GetKeyboard()->KeyPressed(KeyCodes::F10)) {
-		world->ShuffleConstraints(false);
-	}
-
-	if (Window::GetKeyboard()->KeyPressed(KeyCodes::F7)) {
-		world->ShuffleObjects(true);
-	}
-	if (Window::GetKeyboard()->KeyPressed(KeyCodes::F8)) {
-		world->ShuffleObjects(false);
-	}
 }
 
 
@@ -312,7 +232,7 @@ void TutorialGame::InitWorldSinglePlayer() {
 	CreateStaticLevel(false, false);
 	InitDefaultFloor();
 	
-	//STARTING ROOM----------------------------------------------------------------------------------------------------------------------
+	//this should probably be all refactored into a function for reuse, oh well
 	AddPlayerToWorld(Vector3(80, 0, 10),false,false);
 	AddOBBCubeToWorld(Vector3(70, -5, 10),Vector3(3,1,3), false, false);
 	AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1),0, false, false);
@@ -324,12 +244,11 @@ void TutorialGame::InitWorldSinglePlayer() {
 	AddRopeToWorld(Vector3(50, 5, 10), false, false);
 	AddCubeWallToWorld(Vector3(30, -4, 6), false, false);
 	AddJumppad(Vector3(20, -5, 40), false, false);
-	//AddSphereToWorld(Vector3(1, 0, 0), .3f, 0.7f);
 
-	std::vector<Vector3> enemyPath;
-	enemyPath.emplace_back(Vector3(60, 0, 40));
-	enemyPath.emplace_back(Vector3(60, 0, 60));
-	AddEnemyToWorld(Vector3(60, 0, 40), enemyPath, false, false);
+	std::vector<Vector3> patrolPoints;
+	patrolPoints.emplace_back(Vector3(60, 0, 40));
+	patrolPoints.emplace_back(Vector3(60, 0, 60));
+	AddEnemyToWorld(Vector3(60, 0, 40), patrolPoints, false, false);
 	AddGrappleUnlockerToWorld(Vector3(80, 0, 80), false, false);
 
 
@@ -367,8 +286,7 @@ void TutorialGame::InitWorldClient() {
 	CreateStaticLevel(true, false);
 	InitDefaultFloor();
 
-
-	//STARTING ROOM----------------------------------------------------------------------------------------------------------------------
+	//this should probably be all refactored into a function for reuse, oh well
 	AddOBBCubeToWorld(Vector3(70, -5, 10), Vector3(3, 1, 3),0, true, false);
 	AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1), 0, true, false);
 	AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f, true, false);
@@ -379,12 +297,11 @@ void TutorialGame::InitWorldClient() {
 	AddRopeToWorld(Vector3(50, 5, 10), true, false);
 	AddCubeWallToWorld(Vector3(30, -4, 6), true, false);
 	AddJumppad(Vector3(20, -5, 40), true, false);
-	//AddSphereToWorld(Vector3(1, 0, 0), .3f, 0.7f);
 
-	std::vector<Vector3> enemyPath;
-	enemyPath.emplace_back(Vector3(60, 0, 40));
-	enemyPath.emplace_back(Vector3(60, 0, 60));
-	AddEnemyToWorld(Vector3(60, 0, 40), enemyPath, true, false);
+	std::vector<Vector3> patrolPoints;
+	patrolPoints.emplace_back(Vector3(60, 0, 40));
+	patrolPoints.emplace_back(Vector3(60, 0, 60));
+	AddEnemyToWorld(Vector3(60, 0, 40), patrolPoints, true, false);
 	AddGrappleUnlockerToWorld(Vector3(80, 0, 80), true, false);
 
 
@@ -411,7 +328,7 @@ void TutorialGame::InitWorldServer() { //setup world as server
 	CreateStaticLevel(true, true);
 	InitDefaultFloor();
 
-	//STARTING ROOM----------------------------------------------------------------------------------------------------------------------
+	//this should probably be all refactored into a function for reuse, oh well
 	AddOBBCubeToWorld(Vector3(70, -5, 10), Vector3(3, 1, 3), 0, true,true);
 	AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1), 0, true, true);
 	AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f, true, true);
@@ -422,12 +339,11 @@ void TutorialGame::InitWorldServer() { //setup world as server
 	AddRopeToWorld(Vector3(50, 5, 10), true, true);
 	AddCubeWallToWorld(Vector3(30, -4, 6), true, true);
 	AddJumppad(Vector3(20, -5, 40), true, true);
-	//AddSphereToWorld(Vector3(1, 0, 0), .3f, 0.7f);
 
-	std::vector<Vector3> enemyPath;
-	enemyPath.emplace_back(Vector3(60, 0, 40));
-	enemyPath.emplace_back(Vector3(60, 0, 60));
-	AddEnemyToWorld(Vector3(60, 0, 40), enemyPath, true, true);
+	std::vector<Vector3> patrolPoints;
+	patrolPoints.emplace_back(Vector3(60, 0, 40));
+	patrolPoints.emplace_back(Vector3(60, 0, 60));
+	AddEnemyToWorld(Vector3(60, 0, 40), patrolPoints, true, true);
 	AddGrappleUnlockerToWorld(Vector3(80, 0, 80), true, true);
 
 
@@ -461,8 +377,8 @@ void TutorialGame::ReceivePacket(int type, GamePacket* payload, int source) {
 				});
 			break;
 		}
-		case Player_Connected: {
-			if (!hasClientInitialised) {
+		case Player_Connected: { //if we recieve this, it tells us a new player has connected (could be this client)
+			if (!hasClientInitialised) { //this means that this is a new client and objects for all current players are needed
 				PlayerConnectServerAckPacket* realPacket = (PlayerConnectServerAckPacket*)payload;
 				AddPlayerToWorld(Vector3(80, 0, 10), true, false, true, realPacket->playerNetIDs[realPacket->numPlayers - 1]);
 				for (int i = 0; i < realPacket->numPlayers - 1; i++) {
@@ -470,7 +386,7 @@ void TutorialGame::ReceivePacket(int type, GamePacket* payload, int source) {
 				}
 				hasClientInitialised = true;
 			}
-			else {
+			else { //this means a new player has joined the game and a new player object is needed
 				PlayerConnectServerAckPacket* realPacket = (PlayerConnectServerAckPacket*)payload;
 				AddPlayerToWorld(Vector3(80, 0, 10), true, false, false, realPacket->playerNetIDs[realPacket->numPlayers - 1]);
 			}
@@ -495,8 +411,8 @@ void TutorialGame::ReceivePacket(int type, GamePacket* payload, int source) {
 			ProcessClientInput(realPacket);
 			break;
 		}
-		case Player_Connected: {
-			if (prevClient == source)return;
+		case Player_Connected: { //this means a client is sending a connect message
+			if (prevClient == source)return; //just in case we receive lots of packets from the same client, ignore them and only send one packet back
 			PlayerConnectPacket* realPacket = (PlayerConnectPacket*)payload;
 			numPlayers++;
 			GameObject* player = AddPlayerToWorld(Vector3(80, 0, 10), true, true);
@@ -510,7 +426,7 @@ void TutorialGame::ReceivePacket(int type, GamePacket* payload, int source) {
 			pac->playerNetIDs[1] = playerIDs[1];
 			pac->playerNetIDs[2] = playerIDs[2];
 			pac->playerNetIDs[3] = playerIDs[3];
-			server->SendGlobalPacket(*pac);
+			server->SendGlobalPacket(*pac); //tell all clients a new player has joined
 			prevClient = source;
 		}
 		}
@@ -518,20 +434,20 @@ void TutorialGame::ReceivePacket(int type, GamePacket* payload, int source) {
 }
 void TutorialGame::ProcessClientInput(ClientPacket* p) {
 
-	playerInputsMap[p->objectID][0] = p->buttonstates[0];
-	playerInputsMap[p->objectID][1] = p->buttonstates[1];
-	playerInputsMap[p->objectID][2] = p->buttonstates[2];
-	playerInputsMap[p->objectID][3] = p->buttonstates[3];
-	playerInputsMap[p->objectID][4] = p->buttonstates[4];
-	playerInputsMap[p->objectID][5] = p->buttonstates[5];
-	playerInputsMap[p->objectID][6] = p->buttonstates[6];
-	playerInputsMap[p->objectID][7] = p->buttonstates[7];
+	playerInputsMap[p->objectID][0] = p->buttonstates[0];//w
+	playerInputsMap[p->objectID][1] = p->buttonstates[1];//a
+	playerInputsMap[p->objectID][2] = p->buttonstates[2];//s
+	playerInputsMap[p->objectID][3] = p->buttonstates[3];//d
+	playerInputsMap[p->objectID][4] = p->buttonstates[4];//space
+	playerInputsMap[p->objectID][5] = p->buttonstates[5];//left click
+	playerInputsMap[p->objectID][6] = p->buttonstates[6];//right click
+	playerInputsMap[p->objectID][7] = p->buttonstates[7];//e
 
 	playerCameraMap[p->objectID].pitch = p->camPitch;
 	playerCameraMap[p->objectID].yaw = p->camYaw;
 }
 
-void TutorialGame::ApplyPlayerInput() {
+void TutorialGame::ApplyPlayerInput() { //this probably could have been done in a game object component
 	for (std::pair<const int, bool[8]> inputPair : playerInputsMap) {
 		if (!inputPair.first)continue;
 		CameraInputStruct c = playerCameraMap[inputPair.first];
@@ -549,6 +465,8 @@ void TutorialGame::ApplyPlayerInput() {
 	}
 }
 
+
+/// ----------------HERE LIES FUNCTIONS TO ADD OBJECTS TO THE GAME-------------------------READER BEWARE---------------------------
 void TutorialGame::AddRopeToWorld(const Vector3& position, bool isNetworked, bool isServerSide) {
 	Vector3 cubeSize = Vector3(0.2f, 0.3f, 0.2f);
 
@@ -1064,7 +982,7 @@ GameObject* TutorialGame::AddPlayerToWorld(const Vector3& position, bool isNetwo
 			}
 			else {
 				character->SetNetworkObject(new NetworkObject(*character, networkID));
-				playerMap[networkID] = character;
+				playerMap[networkID] = character; //we dont increment currentNetworkID as we are using the networkID param instead
 			}
 		}
 	}
@@ -1260,113 +1178,8 @@ void TutorialGame::InitDefaultFloor() {
 	AddFloorToWorld(Vector3(0, -7, 0)); 
 }
 
-void TutorialGame::InitSphereGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing, float radius) {
-	for (int x = 0; x < numCols; ++x) {
-		for (int z = 0; z < numRows; ++z) {
-			Vector3 position = Vector3(x * colSpacing, 10.0f, z * rowSpacing);
-			AddSphereToWorld(position, radius, 1.0f);
-		}
-	}
-	AddFloorToWorld(Vector3(0, -2, 0));
-}
 
-void TutorialGame::InitMixedGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing) {
-	float sphereRadius = 0.5f;
-	Vector3 cubeDims = Vector3(.5f, .5f, .5f);
-
-	for (int x = 0; x < numCols; ++x) {
-		for (int z = 0; z < numRows; ++z) {
-			Vector3 position = Vector3(x * colSpacing, 10.0f, z * rowSpacing);
-
-			if (rand() % 2) {
-				AddCubeToWorld(position, cubeDims,0.7f);
-			}
-			else {
-				AddSphereToWorld(position, sphereRadius,0.7f);
-			}
-		}
-	}
-}
-
-void TutorialGame::InitCubeGridWorld(int numRows, int numCols, float rowSpacing, float colSpacing, const Vector3& cubeDims) {
-	for (int x = 1; x < numCols+1; ++x) {
-		for (int z = 1; z < numRows+1; ++z) {
-			Vector3 position = Vector3(x * colSpacing, 10.0f, z * rowSpacing);
-			AddCubeToWorld(position, cubeDims, 1.0f);
-		}
-	}
-}
-
-/*
-Every frame, this code will let you perform a raycast, to see if there's an object
-underneath the cursor, and if so 'select it' into a pointer, so that it can be 
-manipulated later. Pressing Q will let you toggle between this behaviour and instead
-letting you move the camera around. 
-
-*/
-bool TutorialGame::SelectObject() {
-	if (Window::GetKeyboard()->KeyPressed(KeyCodes::Q)) {
-		inSelectionMode = !inSelectionMode;
-		if (inSelectionMode) {
-			Window::GetWindow()->ShowOSPointer(true);
-			Window::GetWindow()->LockMouseToWindow(false);
-		}
-		else {
-			Window::GetWindow()->ShowOSPointer(false);
-			Window::GetWindow()->LockMouseToWindow(true);
-		}
-	}
-	if (inSelectionMode) {
-
-		if (Window::GetMouse()->ButtonDown(NCL::MouseButtons::Left)) {
-			if (selectionObject) {	//set colour to deselected;
-				if (selectionObject->GetRenderObject())selectionObject->GetRenderObject()->SetColour(Vector4(1, 1, 1, 1));
-				selectionObject = nullptr;
-			}
-
-			Ray ray = CollisionDetection::BuildRayFromMouse(world->GetMainCamera());
-
-			RayCollision closestCollision;
-			if (world->Raycast(ray, closestCollision, true)) {
-				selectionObject = (GameObject*)closestCollision.node;
-				if(selectionObject->GetRenderObject())selectionObject->GetRenderObject()->SetColour(Vector4(0, 1, 0, 1));
-				return true;
-			}
-			else {
-				return false;
-			}
-		}
-	}
-	return false;
-}
-
-/*
-If an object has been clicked, it can be pushed with the right mouse button, by an amount
-determined by the scroll wheel. In the first tutorial this won't do anything, as we haven't
-added linear motion into our physics system. After the second tutorial, objects will move in a straight
-line - after the third, they'll be able to twist under torque aswell.
-*/
-
-void TutorialGame::MoveSelectedObject() {
-	forceMagnitude += Window::GetMouse()->GetWheelMovement() * 100.0f;
-
-	if (!selectionObject) {
-		return;//we haven't selected anything!
-	}
-	//Push the selected object!
-	if (Window::GetMouse()->ButtonPressed(NCL::MouseButtons::Right)) {
-		Ray ray = CollisionDetection::BuildRayFromMouse(world->GetMainCamera());
-
-		RayCollision closestCollision;
-		if (world->Raycast(ray, closestCollision, true)) {
-			if (closestCollision.node == selectionObject) {
-				selectionObject->GetPhysicsObject()->AddForceAtPosition(ray.GetDirection() * forceMagnitude, closestCollision.collidedAt);
-			}
-		}
-	}
-}
-
-void TutorialGame::CreateStaticLevel(bool isNetworked, bool isServerSide) {
+void TutorialGame::CreateStaticLevel(bool isNetworked, bool isServerSide) { //read from the file to create the level
 	std::ifstream infile(Assets::DATADIR + "TestGrid1.txt");
 	int nodeSize;
 	int gridWidth;
@@ -1388,9 +1201,8 @@ void TutorialGame::CreateStaticLevel(bool isNetworked, bool isServerSide) {
 				AddWallToWorld(Vector3((float)(x * nodeSize), nodeSize*i, (float)(y * nodeSize)), Vector3(nodeSize, nodeSize, nodeSize) * 0.5f, isNetworked, isServerSide);
 			}
 			else {
-				AddPointPickupToWorld(Vector3((float)(x * nodeSize), -3, (float)(y * nodeSize)),10, isNetworked, isServerSide);
+				AddPointPickupToWorld(Vector3((float)(x * nodeSize), -4, (float)(y * nodeSize)),10, isNetworked, isServerSide);
 			}
-			//if (type == 'x')AddCubeToWorld(Vector3(x, 0, y), Vector3(1,1,1));
 		}
 	}
 	infile.close();
