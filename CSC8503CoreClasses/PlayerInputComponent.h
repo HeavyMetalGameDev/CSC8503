@@ -19,7 +19,7 @@ namespace NCL::CSC8503 {
         bool hasJumped=false;
         bool isGrappling = false;
         bool isGrapplingStatic = false;
-        bool hasUnlockedGrapple = false;
+        bool hasUnlockedGrapple = true;
         float jumpPower = 15;
         GameWorld* worldRef;
         PhysicsObject* physObject;

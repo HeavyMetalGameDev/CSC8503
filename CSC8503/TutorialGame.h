@@ -36,6 +36,7 @@
 #include "ClientInputComponent.h"
 #include "ServerPlayerComponent.h"
 #include "ServerStateMachineEnemyComponent.h"
+#include "BehaviourTreeEnemyComponent.h"
 #include "ClientPlayerComponent.h"
 #include "Assets.h"
 
@@ -106,6 +107,7 @@ namespace NCL {
 
 			GameObject* AddPlayerToWorld(const Vector3& position, bool isNetworked = false, bool isServerSide = false, bool isThisPlayer = true, int networkID=0);
 			GameObject* AddEnemyToWorld(const Vector3& position, std::vector<Vector3>& patrolPoints, bool isNetworked = false, bool isServerSide = false);
+			GameObject* AddBehaviourTreeEnemyToWorld(const Vector3& position, bool isNetworked = false, bool isServerSide = false);
 			GameObject* AddKeyDoorPairToWorld(const Vector3& keyPosition,const Vector3& doorPosition, const Vector4& colour, bool isNetworked = false, bool isServerSide = false);
 
 			void CreateStaticLevel(bool isNetworked = false, bool isServerSide = false);

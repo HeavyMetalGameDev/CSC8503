@@ -333,7 +333,13 @@ void TutorialGame::InitWorldSinglePlayer() {
 	AddGrappleUnlockerToWorld(Vector3(80, 0, 80), false, false);
 
 
-	AddTreasure(Vector3(80, 20, 10), false, false);
+	GameObject* t = AddTreasure(Vector3(80, 20, 10), false, false);
+	GameObject* bte = AddBehaviourTreeEnemyToWorld(Vector3(80, 25, 10), false, false);
+	BehaviourTreeEnemyComponent* btec;
+	if (bte->TryGetComponent<BehaviourTreeEnemyComponent>(btec)) {
+		btec->SetTreasureObject(t);
+	}
+
 
 	world->StartWorld();
 }
@@ -382,7 +388,8 @@ void TutorialGame::InitWorldClient() {
 	AddGrappleUnlockerToWorld(Vector3(80, 0, 80), true, false);
 
 
-	AddTreasure(Vector3(80, 20, 10), true, false);
+	GameObject* t = AddTreasure(Vector3(80, 20, 10), true, false);
+	GameObject* bte = AddBehaviourTreeEnemyToWorld(Vector3(80, 25, 10), true, false);
 	world->StartWorld();
 }
 
@@ -424,7 +431,12 @@ void TutorialGame::InitWorldServer() { //setup world as server
 	AddGrappleUnlockerToWorld(Vector3(80, 0, 80), true, true);
 
 
-	AddTreasure(Vector3(80, 20, 10), true, true);
+	GameObject* t = AddTreasure(Vector3(80, 20, 10), true, true);
+	GameObject* bte = AddBehaviourTreeEnemyToWorld(Vector3(80, 25, 10), true, true);
+	BehaviourTreeEnemyComponent* btec;
+	if (bte->TryGetComponent<BehaviourTreeEnemyComponent>(btec)) {
+		btec->SetTreasureObject(t);
+	}
 	world->StartWorld();
 }
 
@@ -1121,6 +1133,62 @@ GameObject* TutorialGame::AddEnemyToWorld(const Vector3& position, std::vector<V
 	
 	
 	
+
+	world->AddGameObject(character);
+
+	return character;
+}
+
+GameObject* TutorialGame::AddBehaviourTreeEnemyToWorld(const Vector3& position, bool isNetworked, bool isServerSide) {
+	float radius = 3.0f;
+	float inverseMass = 0.5f;
+
+	GameObject* character = new GameObject();
+	character->SetTag("Enemy");
+	Vector3 charSize = Vector3(radius, radius, radius);
+
+	character->GetTransform()
+		.SetScale(charSize)
+		.SetPosition(position);
+
+	character->SetRenderObject(new RenderObject(&character->GetTransform(), sphereMesh, nullptr, basicShader));
+	character->GetRenderObject()->SetColour(Debug::RED);
+	if (!isNetworked) {
+		SphereVolume* volume = new SphereVolume(radius);
+		character->SetBoundingVolume((CollisionVolume*)volume);
+		character->SetPhysicsObject(new PhysicsObject(&character->GetTransform(), character->GetBoundingVolume()));
+
+		PhysicsObject* co = character->GetPhysicsObject();
+		co->SetInverseMass(inverseMass);
+		co->InitSphereInertia();
+		PhysicsMaterial* enemyPhys;
+		if (world->TryGetPhysMat("Player", enemyPhys))co->SetPhysMat(enemyPhys);
+
+		BehaviourTreeEnemyComponent* btea = new BehaviourTreeEnemyComponent(character);
+		character->AddComponent(btea);
+
+	}
+	else {
+		character->SetNetworkObject(new NetworkObject(*character, currentNetworkObjectID));
+		currentNetworkObjectID++;
+		if (isServerSide) {
+			SphereVolume* volume = new SphereVolume(radius);
+			character->SetBoundingVolume((CollisionVolume*)volume);
+			character->SetPhysicsObject(new PhysicsObject(&character->GetTransform(), character->GetBoundingVolume()));
+
+			PhysicsObject* co = character->GetPhysicsObject();
+			co->SetInverseMass(inverseMass);
+			co->InitSphereInertia();
+			PhysicsMaterial* enemyPhys;
+			if (world->TryGetPhysMat("Player", enemyPhys))co->SetPhysMat(enemyPhys);
+
+			BehaviourTreeEnemyComponent* btea = new BehaviourTreeEnemyComponent(character);
+			character->AddComponent(btea);
+		}
+	}
+
+
+
 
 	world->AddGameObject(character);
 
