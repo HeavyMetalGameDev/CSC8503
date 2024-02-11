@@ -19,6 +19,8 @@ namespace NCL::CSC8503 {
         void Update(float dt)override;
         void PhysicsUpdate(float dt) override;
 
+        Vector3 CalculateLookDirection();
+
         void ApplyForceToObject();
         //void OnObjectPickup();
         void OnObjectDrop();

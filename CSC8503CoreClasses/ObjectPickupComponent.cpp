@@ -5,15 +5,7 @@
 #define DEGREES_TO_RAD 0.0174532925f
 namespace NCL::CSC8503 {
 	void ObjectPickupComponent::Update(float dt) {
-		float normYaw = camera->GetYaw() > 180 ? camera->GetYaw() - 360 : camera->GetYaw(); //get yaw between -180 and 180
-		normYaw = normYaw * DEGREES_TO_RAD;
-
-		//convert from pitch/yaw to directions
-		float xDir = cos(normYaw)*cos(camera->GetPitch()*DEGREES_TO_RAD);
-		float yDir = sin(camera->GetPitch() * DEGREES_TO_RAD);
-		float zDir = sin(-normYaw) * cos(camera->GetPitch() * DEGREES_TO_RAD);
-
-		lookDirection  = Vector3(zDir, yDir, -xDir);
+		lookDirection = CalculateLookDirection();
 	
 		triggerObject->GetTransform().SetPosition(gameObject->GetTransform().GetPosition() + (lookDirection*2.5f) + Vector3(0,0.3f,0));
 
@@ -28,6 +20,17 @@ namespace NCL::CSC8503 {
 		}
 	}
 
+	Vector3 ObjectPickupComponent::CalculateLookDirection() {
+		float normYaw = camera->GetYaw() > 180 ? camera->GetYaw() - 360 : camera->GetYaw(); //get yaw between -180 and 180
+		normYaw = normYaw * DEGREES_TO_RAD;
+
+		//convert from pitch/yaw to directions
+		float xDir = cos(normYaw) * cos(camera->GetPitch() * DEGREES_TO_RAD);
+		float yDir = sin(camera->GetPitch() * DEGREES_TO_RAD);
+		float zDir = sin(-normYaw) * cos(camera->GetPitch() * DEGREES_TO_RAD);
+
+		return Vector3(zDir, yDir, -xDir);
+	}
 	void ObjectPickupComponent::PhysicsUpdate(float dt) {
 		if (isEPressed) {
 			if (!hasObject) {

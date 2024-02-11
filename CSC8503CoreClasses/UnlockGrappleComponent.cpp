@@ -7,7 +7,6 @@ namespace NCL::CSC8503 {
 			if (other->TryGetComponent<PlayerInputComponent>(pic)) {
 				pic->UnlockGrapple();
 			}
-
 		}
 	}
 }

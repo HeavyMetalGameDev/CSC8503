@@ -85,7 +85,7 @@ float realDT = idealDT;
 
 void PhysicsSystem::Update(float dt) {
 
-	gameWorld.UpdateWorldPhysics(dt); //PhysicsUpdate all game objects in the world.
+	 //PhysicsUpdate all game objects in the world.
 
 	if (Window::GetKeyboard()->KeyPressed(KeyCodes::B)) {
 		useBroadPhase = !useBroadPhase;
@@ -114,6 +114,7 @@ void PhysicsSystem::Update(float dt) {
 	}
 	int iteratorCount = 0;
 	while (dTOffset > realDT) {
+		gameWorld.UpdateWorldPhysics(realDT);
 		IntegrateAccel(realDT); //Update accelerations from external forces
 		if (useBroadPhase) {
 			BroadPhase();
@@ -471,7 +472,8 @@ ones in the next 'game' frame.
 void PhysicsSystem::ClearForces() {
 	gameWorld.OperateOnContents(
 		[](GameObject* o) {
-			o->GetPhysicsObject()->ClearForces();
+			PhysicsObject* po = o->GetPhysicsObject();
+			if(po)po->ClearForces();
 		}
 	);
 }

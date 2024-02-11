@@ -38,6 +38,7 @@
 #include "ServerStateMachineEnemyComponent.h"
 #include "BehaviourTreeEnemyComponent.h"
 #include "ClientPlayerComponent.h"
+#include "HoverComponent.h"
 #include "Assets.h"
 
 #include "PositionConstraint.h"
@@ -70,7 +71,9 @@ namespace NCL {
 			void ProcessClientInput(ClientPacket* p);
 			void ApplyPlayerInput();
 
-			void InitDefaultFloor();			
+			void InitDefaultFloor();
+
+            void SetupWorld(bool isNetworked, bool isServerSide);
 
 			GameObject* AddFloorToWorld(const Vector3& position);
 			GameObject* AddSphereToWorld(const Vector3& position, float radius, float inverseMass = 10.0f, bool isNetworked=false,bool isServerSide = false);
@@ -87,6 +90,7 @@ namespace NCL {
 			GameObject* AddTreasurePoint(const Vector3& position, bool isNetworked = false, bool isServerSide = false);
 			void AddRopeToWorld(const Vector3& position, bool isNetworked = false, bool isServerSide = false);
 
+			GameObject* AddTestToWorld();
 			GameObject* AddPlayerToWorld(const Vector3& position, bool isNetworked = false, bool isServerSide = false, bool isThisPlayer = true, int networkID=0);
 			GameObject* AddEnemyToWorld(const Vector3& position, std::vector<Vector3>& patrolPoints, bool isNetworked = false, bool isServerSide = false);
 			GameObject* AddBehaviourTreeEnemyToWorld(const Vector3& position, bool isNetworked = false, bool isServerSide = false);

@@ -56,8 +56,6 @@ void TutorialGame::InitialiseAssets() {
 	basicShader = renderer->LoadShader("scene.vert", "scene.frag");
 
 	InitCamera();
-	
-	//InitWorldSinglePlayer();
 }
 
 TutorialGame::~TutorialGame()	{
@@ -185,8 +183,6 @@ void TutorialGame::UpdateGameAsServer(float dt) {
 		break;
 	}
 
-	//gameTimer -= dt;
-	Debug::Print("Time:" + std::to_string(((int)gameTimer)), { 5, 5 });
 	Debug::Print("/" + std::to_string(totalPickups), Vector2(90, 10), Debug::YELLOW);
 	world->GetMainCamera().UpdateCamera(dt);
 
@@ -195,7 +191,7 @@ void TutorialGame::UpdateGameAsServer(float dt) {
 	ApplyPlayerInput();
 	physics->Update(dt);
 
-	//here we send full packets for each netwoek object
+	//here we send full packets for each network object
 
 	world->OperateOnContents([&](GameObject* g)->void
 		{if (g->GetNetworkObject()) {
@@ -227,38 +223,10 @@ void TutorialGame::InitWorldSinglePlayer() {
 	gameTimer = 140;
 	totalPickups = 0;
 	SetState(STATE_PLAYING);
-
-	//InitMixedGridWorld(15, 15, 3.5f, 3.5f);
-	CreateStaticLevel(false, false);
-	InitDefaultFloor();
 	
 	//this should probably be all refactored into a function for reuse, oh well
 	AddPlayerToWorld(Vector3(80, 0, 10),false,false);
-	AddOBBCubeToWorld(Vector3(70, -5, 10),Vector3(3,1,3), false, false);
-	AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1),0, false, false);
-	AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f, false, false);
-	AddKeyDoorPairToWorld(Vector3(70, 3.5f, 10), Vector3(10, 0, 20), Debug::YELLOW, false, false);
-	AddTreasurePoint(Vector3(85, -3, 10), false, false);
-
-	AddCapsuleToWorld(Vector3(80, 0, 10), 1,0.7f, false, false);
-	AddRopeToWorld(Vector3(50, 5, 10), false, false);
-	AddCubeWallToWorld(Vector3(30, -4, 6), false, false);
-	AddJumppad(Vector3(20, -5, 40), false, false);
-
-	std::vector<Vector3> patrolPoints;
-	patrolPoints.emplace_back(Vector3(60, 0, 40));
-	patrolPoints.emplace_back(Vector3(60, 0, 60));
-	AddEnemyToWorld(Vector3(60, 0, 40), patrolPoints, false, false);
-	AddGrappleUnlockerToWorld(Vector3(80, 0, 80), false, false);
-
-
-	GameObject* t = AddTreasure(Vector3(80, 20, 10), false, false);
-	GameObject* bte = AddBehaviourTreeEnemyToWorld(Vector3(80, 25, 10), false, false);
-	BehaviourTreeEnemyComponent* btec;
-	if (bte->TryGetComponent<BehaviourTreeEnemyComponent>(btec)) {
-		btec->SetTreasureObject(t);
-	}
-
+    SetupWorld(false, false);
 
 	world->StartWorld();
 }
@@ -282,31 +250,7 @@ void TutorialGame::InitWorldClient() {
 	totalPickups = 0;
 	SetState(STATE_CLIENT);
 
-
-	CreateStaticLevel(true, false);
-	InitDefaultFloor();
-
-	//this should probably be all refactored into a function for reuse, oh well
-	AddOBBCubeToWorld(Vector3(70, -5, 10), Vector3(3, 1, 3),0, true, false);
-	AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1), 0, true, false);
-	AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f, true, false);
-	AddKeyDoorPairToWorld(Vector3(70, 3.5f, 10), Vector3(10, 0, 20), Debug::YELLOW, true, false);
-	AddTreasurePoint(Vector3(85, -3, 10), true, false);
-
-	AddCapsuleToWorld(Vector3(80, 0, 10), 1, 0.7f, true, false);
-	AddRopeToWorld(Vector3(50, 5, 10), true, false);
-	AddCubeWallToWorld(Vector3(30, -4, 6), true, false);
-	AddJumppad(Vector3(20, -5, 40), true, false);
-
-	std::vector<Vector3> patrolPoints;
-	patrolPoints.emplace_back(Vector3(60, 0, 40));
-	patrolPoints.emplace_back(Vector3(60, 0, 60));
-	AddEnemyToWorld(Vector3(60, 0, 40), patrolPoints, true, false);
-	AddGrappleUnlockerToWorld(Vector3(80, 0, 80), true, false);
-
-
-	GameObject* t = AddTreasure(Vector3(80, 20, 10), true, false);
-	GameObject* bte = AddBehaviourTreeEnemyToWorld(Vector3(80, 25, 10), true, false);
+    SetupWorld(true, false);
 	world->StartWorld();
 }
 
@@ -325,35 +269,40 @@ void TutorialGame::InitWorldServer() { //setup world as server
 	totalPickups = 0;
 	SetState(STATE_SERVER);
 
-	CreateStaticLevel(true, true);
-	InitDefaultFloor();
-
-	//this should probably be all refactored into a function for reuse, oh well
-	AddOBBCubeToWorld(Vector3(70, -5, 10), Vector3(3, 1, 3), 0, true,true);
-	AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1), 0, true, true);
-	AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f, true, true);
-	AddKeyDoorPairToWorld(Vector3(70, 3.5f, 10), Vector3(10, 0, 20), Debug::YELLOW, true, true);
-	AddTreasurePoint(Vector3(85, -3, 10), true, true);
-
-	AddCapsuleToWorld(Vector3(80, 0, 10), 1, 0.7f, true, true);
-	AddRopeToWorld(Vector3(50, 5, 10), true, true);
-	AddCubeWallToWorld(Vector3(30, -4, 6), true, true);
-	AddJumppad(Vector3(20, -5, 40), true, true);
-
-	std::vector<Vector3> patrolPoints;
-	patrolPoints.emplace_back(Vector3(60, 0, 40));
-	patrolPoints.emplace_back(Vector3(60, 0, 60));
-	AddEnemyToWorld(Vector3(60, 0, 40), patrolPoints, true, true);
-	AddGrappleUnlockerToWorld(Vector3(80, 0, 80), true, true);
-
-
-	GameObject* t = AddTreasure(Vector3(80, 20, 10), true, true);
-	GameObject* bte = AddBehaviourTreeEnemyToWorld(Vector3(80, 25, 10), true, true);
-	BehaviourTreeEnemyComponent* btec;
-	if (bte->TryGetComponent<BehaviourTreeEnemyComponent>(btec)) {
-		btec->SetTreasureObject(t);
-	}
+    SetupWorld(true,true);
 	world->StartWorld();
+}
+
+void TutorialGame::SetupWorld(bool isNetworked, bool isServerSide)
+{
+    CreateStaticLevel(isNetworked, isServerSide);
+    InitDefaultFloor();
+
+    //this should probably be all refactored into a function for reuse, oh well
+    AddOBBCubeToWorld(Vector3(70, -5, 10), Vector3(3, 1, 3), 0, isNetworked, isServerSide);
+    AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1), 0, isNetworked, isServerSide);
+    AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f, isNetworked, isServerSide);
+    AddKeyDoorPairToWorld(Vector3(70, 3.5f, 10), Vector3(10, 0, 20), Debug::YELLOW, isNetworked, isServerSide);
+    AddTreasurePoint(Vector3(85, -3, 10), isNetworked, isServerSide);
+
+    AddCapsuleToWorld(Vector3(80, 0, 10), 1, 0.7f, isNetworked, isServerSide);
+    AddRopeToWorld(Vector3(50, 5, 10), isNetworked, isServerSide);
+    AddCubeWallToWorld(Vector3(30, -4, 6), isNetworked, isServerSide);
+    AddJumppad(Vector3(20, -5, 40), isNetworked, isServerSide);
+
+    std::vector<Vector3> patrolPoints;
+    patrolPoints.emplace_back(Vector3(60, 0, 40));
+    patrolPoints.emplace_back(Vector3(60, 0, 60));
+    AddEnemyToWorld(Vector3(60, 0, 40), patrolPoints, isNetworked, isServerSide);
+    AddGrappleUnlockerToWorld(Vector3(80, 0, 80), isNetworked, isServerSide);
+
+
+    GameObject* t = AddTreasure(Vector3(80, 20, 10), isNetworked, isServerSide);
+    GameObject* bte = AddBehaviourTreeEnemyToWorld(Vector3(80, 25, 10), isNetworked, isServerSide);
+    BehaviourTreeEnemyComponent* btec;
+    if (bte->TryGetComponent<BehaviourTreeEnemyComponent>(btec)) {
+        btec->SetTreasureObject(t);
+    }
 }
 
 void TutorialGame::ReceivePacket(int type, GamePacket* payload, int source) {
@@ -784,6 +733,23 @@ GameObject* TutorialGame::AddCapsuleToWorld(const Vector3& position, float size,
 	return capsule;
 }
 
+GameObject* TutorialGame::AddTestToWorld() {
+	GameObject* cube = new GameObject();
+
+	Vector3 sphereSize = Vector3(2, 2, 2);
+
+	cube->GetTransform()
+		.SetScale(sphereSize)
+		.SetPosition(sphereSize);
+
+	cube->SetRenderObject(new RenderObject(&cube->GetTransform(), sphereMesh, basicTex, basicShader));
+
+	HoverComponent* hc = new HoverComponent();
+	cube->AddComponent(hc);
+	world->AddGameObject(cube);
+
+	return cube;
+}
 GameObject* TutorialGame::AddCubeToWorld(const Vector3& position, Vector3 dimensions, float inverseMass, bool isNetworked, bool isServerSide) {
 	GameObject* cube = new GameObject();
 
