@@ -182,8 +182,6 @@ void TutorialGame::UpdateGameAsServer(float dt) {
 		return;
 		break;
 	}
-
-	Debug::Print("/" + std::to_string(totalPickups), Vector2(90, 10), Debug::YELLOW);
 	world->GetMainCamera().UpdateCamera(dt);
 
 	world->UpdateWorld(dt);
@@ -278,7 +276,6 @@ void TutorialGame::SetupWorld(bool isNetworked, bool isServerSide)
     CreateStaticLevel(isNetworked, isServerSide);
     InitDefaultFloor();
 
-    //this should probably be all refactored into a function for reuse, oh well
     AddOBBCubeToWorld(Vector3(70, -5, 10), Vector3(3, 1, 3), 0, isNetworked, isServerSide);
     AddCubeToWorld(Vector3(70, 3, 10), Vector3(1, 0.5f, 1), 0, isNetworked, isServerSide);
     AddSphereToWorld(Vector3(70, 0, 10), .3f, 0.7f, isNetworked, isServerSide);

@@ -16,22 +16,38 @@ namespace NCL::CSC8503 {
 		stateMachine->AddState(chasePlayerState);
 		stateMachine->AddState(shootPlayerState);
 
-		stateMachine->AddTransition(new StateTransition(patrolState, chasePlayerState, [&]()->bool {return canSeePlayer; })); //chase if can see player--------------------------------------
+		stateMachine->AddTransition(new StateTransition(patrolState, chasePlayerState, 
+            [&]()->bool {
+                return canSeePlayer; 
+                })); //chase if can see player
+
 		stateMachine->AddTransition(new StateTransition(chasePlayerState, shootPlayerState,
 			[&]()->bool {
 				float distance = (currentPlayer->GetTransform().GetPosition() - gameObject->GetTransform().GetPosition()).Length();
-				return canSeePlayer && distance <= 25.0f; })); //shoot if is close enough
+				return canSeePlayer && distance <= 25.0f;
+                })); //shoot if is close enough
+
 		stateMachine->AddTransition(new StateTransition(shootPlayerState, chasePlayerState,
 			[&]()->bool {
 				float distance = (currentPlayer->GetTransform().GetPosition() - gameObject->GetTransform().GetPosition()).Length();
-				return !canSeePlayer || distance >= 20.0f; })); //chase if can no longer see player or too far away
-		stateMachine->AddTransition(new StateTransition(chasePlayerState, returnToPatrolState, [&]()->bool {return !canSeePlayer && losePlayerTimer > 7.0f; })); //return to patrol if timer runs out
+				return !canSeePlayer || distance >= 20.0f;
+                })); //chase if can no longer see player or too far away
+
+		stateMachine->AddTransition(new StateTransition(chasePlayerState, returnToPatrolState, 
+            [&]()->bool {
+                return !canSeePlayer && losePlayerTimer > 7.0f; 
+                })); //return to patrol if timer runs out
+
 		stateMachine->AddTransition(new StateTransition(returnToPatrolState, patrolState,
 			[&]()->bool {
 				float distance = (patrolPoints[currentPatrolPoint] - gameObject->GetTransform().GetPosition()).Length();
-				return distance < 2.0f; })); //patrol if close to patrol point
+				return distance < 2.0f;
+                })); //patrol if close to patrol point
+
 		stateMachine->AddTransition(new StateTransition(returnToPatrolState, chasePlayerState,
-			[&]()->bool {return canSeePlayer; })); //chase player if we spot them while returning
+			[&]()->bool {
+                return canSeePlayer;
+                })); //chase player if we spot them while returning
 
 }
 

@@ -15,6 +15,12 @@ namespace NCL::CSC8503 {
         void UnlockGrapple() { hasUnlockedGrapple = true; }
 
     protected:
+        void BeginGrapple();
+        void Jump();
+        void GrappleStatic();
+        void GrappleDynamicObject();
+        Vector3 CalculateLookDirection();
+
         Camera* camera;
         bool hasJumped=false;
         bool isGrappling = false;

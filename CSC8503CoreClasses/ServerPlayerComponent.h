@@ -45,9 +45,14 @@ namespace NCL::CSC8503 {
         void AddPickup() { collectables++; }
 
         void ApplyForceToObject();
-        void OnObjectDrop();
+        
 
 	protected:
+        void StartGrapple();
+        void Jump();
+        Vector3 CalculateLookDirection();
+        void OnObjectDrop();
+
         int points=0;
         int health=100;
         int collectables=0;

@@ -3,15 +3,7 @@
 namespace NCL::CSC8503 {
 
 	void ServerPlayerComponent::Update(float dt) {
-		float normYaw = cameraValues->yaw > 180 ? cameraValues->yaw - 360 : cameraValues->yaw; //get yaw between -180 and 180
-		normYaw = normYaw * DEGREES_TO_RAD;
-
-		//convert from pitch/yaw to directions
-		float xDir = cos(normYaw) * cos(cameraValues->pitch * DEGREES_TO_RAD);
-		float yDir = sin(cameraValues->pitch * DEGREES_TO_RAD);
-		float zDir = sin(-normYaw) * cos(cameraValues->pitch * DEGREES_TO_RAD);
-
-		lookDirection = Vector3(zDir, yDir, -xDir);
+		lookDirection = CalculateLookDirection();
 
 		sphereTrigger->GetTransform().SetPosition(gameObject->GetTransform().GetPosition() + (lookDirection * 2.5f) + Vector3(0, 0.3f, 0));
 		isEPressed = inputs[7];
@@ -23,34 +15,13 @@ namespace NCL::CSC8503 {
 		}
 		inputs[5] = 0;
 
-		//from PlayerInputComponent
 		if (inputs[4]) {
-			Ray ray(gameObject->GetTransform().GetPosition(), { 0,-1,0 });
-			RayCollision rc;
-			if (worldRef->Raycast(ray, rc, true, raycastCollideMap, gameObject)) {
-				if ((rc.collidedAt - gameObject->GetTransform().GetPosition()).Length() < 2.0f) {
-					hasJumped = true;
-				}
-			}
+            Jump();
 		}
 		inputs[4] = 0;
 
-
-		//GRAPPLING-----------------------
 		if (inputs[6] && !isGrappling) {
-			Ray ray(gameObject->GetTransform().GetPosition() + Vector3(0, 0.3f, 0), Vector3(zDir, yDir, -xDir));
-			RayCollision rc;
-			if (worldRef->Raycast(ray, rc, true, raycastCollideMap, gameObject)) {
-				if (((GameObject*)rc.node)->GetPhysicsObject()->IsDynamic()) {
-					grappledObject = (GameObject*)rc.node;
-					isGrapplingStatic = false;
-				}
-				else {
-					staticGrapplePoint = rc.collidedAt;
-					isGrapplingStatic = true;
-				}
-				isGrappling = true;
-			}
+            StartGrapple();
 		}
 		else if (!inputs[6] && isGrappling) {
 			isGrappling = false;
@@ -58,6 +29,48 @@ namespace NCL::CSC8503 {
 		}
 
 	}
+
+    void ServerPlayerComponent::StartGrapple()
+    {
+        Ray ray(gameObject->GetTransform().GetPosition() + Vector3(0, 0.3f, 0), lookDirection);
+        RayCollision rc;
+        if (worldRef->Raycast(ray, rc, true, raycastCollideMap, gameObject)) {
+            if (((GameObject*)rc.node)->GetPhysicsObject()->IsDynamic()) {
+                grappledObject = (GameObject*)rc.node;
+                isGrapplingStatic = false;
+            }
+            else {
+                staticGrapplePoint = rc.collidedAt;
+                isGrapplingStatic = true;
+            }
+            isGrappling = true;
+        }
+    }
+
+    void ServerPlayerComponent::Jump()
+    {
+        Ray ray(gameObject->GetTransform().GetPosition(), { 0,-1,0 });
+        RayCollision rc;
+        if (worldRef->Raycast(ray, rc, true, raycastCollideMap, gameObject)) {
+            if ((rc.collidedAt - gameObject->GetTransform().GetPosition()).Length() < 2.0f) {
+                hasJumped = true;
+            }
+        }
+    }
+
+    Vector3 ServerPlayerComponent::CalculateLookDirection() {
+        float camYaw = cameraValues->yaw;
+        float camPitch = cameraValues->pitch;
+        float normYaw = camYaw > 180 ? camYaw - 360 : camYaw; //get yaw between -180 and 180
+        normYaw = normYaw * DEGREES_TO_RAD;
+
+        //convert from pitch/yaw to directions
+        float xDir = cos(normYaw) * cos(camPitch * DEGREES_TO_RAD);
+        float yDir = sin(camPitch * DEGREES_TO_RAD);
+        float zDir = sin(-normYaw) * cos(camPitch * DEGREES_TO_RAD);
+
+        return Vector3(zDir, yDir, -xDir);
+    }
 
 	void ServerPlayerComponent::PhysicsUpdate(float dt) {
 		if (isEPressed) {
