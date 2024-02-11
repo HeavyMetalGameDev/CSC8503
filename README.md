@@ -1,6 +1,11 @@
 # Summary
 CSC8503 was a module focused on programming physics, networking and AI into a game in C++.
 This is the full codebase, including the code provided by the University. For more curated code samples, see my website at [heavymetalgamedev.github.io](heavymetalgamedev.github.io).
+Most physics code is not mine, apart from some of the collision pair code and additions of collision layers, static/dynamic objects, sleeping/awake objects and trigger volumes.
+
+No rendering code in this project is my own, as it was provided by the University.
+
+
 Furthermore, this codebase does not fully reflect my ability as a programmer, particularly when it comes to function length.
 A lot of the messy code is a result of adding networking retroactively, in only a few days, which did not leave much time for cleaning up the code.
 
