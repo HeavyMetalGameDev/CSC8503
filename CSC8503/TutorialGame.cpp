@@ -323,6 +323,23 @@ void TutorialGame::ReadPacketServer(int type, GamePacket* payload, int source){
         }
     }
 }
+void TutorialGame::ReadPacketClient(int type, GamePacket* payload)
+{
+    switch (type) {
+        case Full_State: {
+            ProcessClientFullPacket(payload);
+            break;
+        }
+        case Player_Connected: { //if we recieve this, it tells us a new player has connected (could be this client)
+            ProcessClientPlayerConnectedPacket(payload);
+            break;
+        }
+        case Game_info: {
+            ProcessClientGameInfoPacket(payload);
+            break;
+        }
+    }
+}
 void TutorialGame::ProcessServerPlayerConnectPacket(int source, GamePacket* payload)
 {
     if (prevClient == source)return; //just in case we receive lots of packets from the same client, ignore them and only send one packet back
@@ -342,23 +359,7 @@ void TutorialGame::ProcessServerPlayerConnectPacket(int source, GamePacket* payl
     server->SendGlobalPacket(*pac); //tell all clients a new player has joined
     prevClient = source;
 }
-void TutorialGame::ReadPacketClient(int type, GamePacket* payload)
-{
-    switch (type) {
-        case Full_State: {
-            ProcessClientFullPacket(payload);
-            break;
-        }
-        case Player_Connected: { //if we recieve this, it tells us a new player has connected (could be this client)
-            ProcessClientPlayerConnectedPacket(payload);
-            break;
-        }
-        case Game_info: {
-            ProcessClientGameInfoPacket(payload);
-            break;
-        }
-    }
-}
+
 void NCL::CSC8503::TutorialGame::ProcessClientFullPacket(GamePacket* payload)
 {
     FullPacket* realPacket = (FullPacket*)payload;
