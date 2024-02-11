@@ -1,7 +1,8 @@
 <h1>Summary</h1> 
 CSC8503 was a module focused on programming physics, networking and AI into a game in C++. The main features of my game were:
 <h3>Physics</h3> 
-- Collisions for Sphere-Sphere , Sphere-AABB, Sphere-OBB, AABB-AABB, Capsule-Sphere, Capsule-AABB 
+- Collisions for Sphere-Sphere , Sphere-AABB, Sphere-OBB, AABB-AABB, Capsule-Sphere, Capsule-AABB
+
 - Ray collisions for all types. 
 - Physics materials with changeable coefficient of restitution, vertical damping and horizontal damping. 
 - Collision layers so objects can ignore collisions with each other. 
