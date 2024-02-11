@@ -69,6 +69,12 @@ namespace NCL {
 
 			void InitCamera();
 			void ProcessClientInput(ClientPacket* p);
+            void ReadPacketServer(int type, GamePacket* payload, int source);
+            void ProcessServerPlayerConnectPacket(int source, GamePacket* payload);
+            void ReadPacketClient(int type, GamePacket* payload);
+            void ProcessClientFullPacket(GamePacket* payload);
+            void ProcessClientGameInfoPacket(GamePacket* payload);
+            void ProcessClientPlayerConnectedPacket(GamePacket* payload);
 			void ApplyPlayerInput();
 
 			void InitDefaultFloor();

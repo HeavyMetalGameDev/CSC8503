@@ -3,11 +3,13 @@
 #include "Window.h"
 #include "Ray.h"
 #define DEGREES_TO_RAD 0.0174532925f
+#define STATIC_FORCE 200.0f
+#define DYNAMIC_FORCE 100.0f
 
 namespace NCL::CSC8503{
 
 	void PlayerInputComponent::Update(float dt) {
-		Debug::Print(".", { 49,50 });
+		Debug::Print(".", { 49,50 }); //crosshair
 		if (Window::GetKeyboard()->KeyPressed(KeyCodes::SPACE)) {
             Jump();
 		}
@@ -73,7 +75,7 @@ namespace NCL::CSC8503{
             Vector3 forceDirection = staticGrapplePoint - gameObject->GetTransform().GetPosition();
             forceDirection.Normalise();
             forceDirection.y *= 0.3f; //this is because the player has less y damping so the force needs to be lower
-            physObject->AddForce(forceDirection * 200.0f);
+            physObject->AddForce(forceDirection * STATIC_FORCE);
         }
         else {
             Debug::Print("Grapple Not Strong Enough!", { 30,80 });
@@ -86,7 +88,7 @@ namespace NCL::CSC8503{
         Vector3 forceDirection = gameObject->GetTransform().GetPosition() - grappledObject->GetTransform().GetPosition();
         forceDirection.Normalise();
         grappledObject->GetPhysicsObject()->SetAwake();
-        grappledObject->GetPhysicsObject()->AddForce(forceDirection * 100.0f);
+        grappledObject->GetPhysicsObject()->AddForce(forceDirection * DYNAMIC_FORCE);
     }
 
     Vector3 PlayerInputComponent::CalculateLookDirection() {

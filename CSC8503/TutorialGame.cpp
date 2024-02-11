@@ -304,79 +304,97 @@ void TutorialGame::SetupWorld(bool isNetworked, bool isServerSide)
 
 void TutorialGame::ReceivePacket(int type, GamePacket* payload, int source) {
 	if (isClient) {
-		switch (type) {
-		case String_Message: {
-			StringPacket* realPacket = (StringPacket*)payload;
-			std::string msg = realPacket->GetStringFromData();
-
-			std::cout << " recieved message " << msg << "\n";
-			break;
-		}
-		case Full_State: {
-			FullPacket* realPacket = (FullPacket*)payload;
-			world->OperateOnContents([&](GameObject* g) {
-				if (g->GetNetworkObject()) {
-					if (g->GetNetworkObject()->GetNetworkID() == realPacket->objectID) {
-						g->GetNetworkObject()->ReadFullPacket(*realPacket);
-					}
-				}
-				});
-			break;
-		}
-		case Player_Connected: { //if we recieve this, it tells us a new player has connected (could be this client)
-			if (!hasClientInitialised) { //this means that this is a new client and objects for all current players are needed
-				PlayerConnectServerAckPacket* realPacket = (PlayerConnectServerAckPacket*)payload;
-				AddPlayerToWorld(Vector3(80, 0, 10), true, false, true, realPacket->playerNetIDs[realPacket->numPlayers - 1]);
-				for (int i = 0; i < realPacket->numPlayers - 1; i++) {
-					AddPlayerToWorld(Vector3(80, 0, 10), true, false, false, realPacket->playerNetIDs[i]);
-				}
-				hasClientInitialised = true;
-			}
-			else { //this means a new player has joined the game and a new player object is needed
-				PlayerConnectServerAckPacket* realPacket = (PlayerConnectServerAckPacket*)payload;
-				AddPlayerToWorld(Vector3(80, 0, 10), true, false, false, realPacket->playerNetIDs[realPacket->numPlayers - 1]);
-			}
-			break;
-		}
-		case Game_info: {
-			GameInfoPacket* realPacket = (GameInfoPacket*)payload;
-			ClientPlayerComponent* c;
-			if (playerMap[realPacket->objectID]->TryGetComponent<ClientPlayerComponent>(c)) {
-				c->SetCollectables(realPacket->collectables);
-				c->SetHealth(realPacket->health);
-				c->SetPoints(realPacket->points);
-			}
-			break;
-		}
-		}
+        ReadPacketClient(type, payload);
 	}
 	else {
-		switch (type) {
-		case Client_State: {
-			ClientPacket* realPacket = (ClientPacket*)payload;
-			ProcessClientInput(realPacket);
-			break;
-		}
-		case Player_Connected: { //this means a client is sending a connect message
-			if (prevClient == source)return; //just in case we receive lots of packets from the same client, ignore them and only send one packet back
-			PlayerConnectPacket* realPacket = (PlayerConnectPacket*)payload;
-			numPlayers++;
-			GameObject* player = AddPlayerToWorld(Vector3(80, 0, 10), true, true);
-			playerObjects.push_back(player);
-			//add a player to world
-			GamePacket* p;
-			playerIDs[numPlayers-1] = currentNetworkObjectID - 1;
-			PlayerConnectServerAckPacket* pac = new PlayerConnectServerAckPacket();
-			pac->numPlayers = numPlayers;
-			pac->playerNetIDs[0] = playerIDs[0];
-			pac->playerNetIDs[1] = playerIDs[1];
-			pac->playerNetIDs[2] = playerIDs[2];
-			pac->playerNetIDs[3] = playerIDs[3];
-			server->SendGlobalPacket(*pac); //tell all clients a new player has joined
-			prevClient = source;
-		}
-		}
+        ReadPacketServer(type, payload, source);
 	}
+}
+void TutorialGame::ReadPacketServer(int type, GamePacket* payload, int source){
+    switch (type) {
+        case Client_State: {
+            ClientPacket* realPacket = (ClientPacket*)payload;
+            ProcessClientInput(realPacket);
+            break;
+        }
+        case Player_Connected: { //this means a client is sending a connect message
+            ProcessServerPlayerConnectPacket(source, payload);
+            break;
+        }
+    }
+}
+void TutorialGame::ProcessServerPlayerConnectPacket(int source, GamePacket* payload)
+{
+    if (prevClient == source)return; //just in case we receive lots of packets from the same client, ignore them and only send one packet back
+    PlayerConnectPacket* realPacket = (PlayerConnectPacket*)payload;
+    numPlayers++;
+    GameObject* player = AddPlayerToWorld(Vector3(80, 0, 10), true, true);
+    playerObjects.push_back(player);
+    //add a player to world
+    GamePacket* p;
+    playerIDs[numPlayers - 1] = currentNetworkObjectID - 1;
+    PlayerConnectServerAckPacket* pac = new PlayerConnectServerAckPacket();
+    pac->numPlayers = numPlayers;
+    pac->playerNetIDs[0] = playerIDs[0];
+    pac->playerNetIDs[1] = playerIDs[1];
+    pac->playerNetIDs[2] = playerIDs[2];
+    pac->playerNetIDs[3] = playerIDs[3];
+    server->SendGlobalPacket(*pac); //tell all clients a new player has joined
+    prevClient = source;
+}
+void TutorialGame::ReadPacketClient(int type, GamePacket* payload)
+{
+    switch (type) {
+        case Full_State: {
+            ProcessClientFullPacket(payload);
+            break;
+        }
+        case Player_Connected: { //if we recieve this, it tells us a new player has connected (could be this client)
+            ProcessClientPlayerConnectedPacket(payload);
+            break;
+        }
+        case Game_info: {
+            ProcessClientGameInfoPacket(payload);
+            break;
+        }
+    }
+}
+void NCL::CSC8503::TutorialGame::ProcessClientFullPacket(GamePacket* payload)
+{
+    FullPacket* realPacket = (FullPacket*)payload;
+    world->OperateOnContents(
+        [&](GameObject* g) {
+            if (g->GetNetworkObject()) {
+                if (g->GetNetworkObject()->GetNetworkID() == realPacket->objectID) {
+                    g->GetNetworkObject()->ReadFullPacket(*realPacket);
+                }
+            }
+        });
+}
+void NCL::CSC8503::TutorialGame::ProcessClientGameInfoPacket(GamePacket* payload)
+{
+    GameInfoPacket* realPacket = (GameInfoPacket*)payload;
+    ClientPlayerComponent* c;
+    if (playerMap[realPacket->objectID]->TryGetComponent<ClientPlayerComponent>(c)) {
+        c->SetCollectables(realPacket->collectables);
+        c->SetHealth(realPacket->health);
+        c->SetPoints(realPacket->points);
+    }
+}
+void TutorialGame::ProcessClientPlayerConnectedPacket(GamePacket* payload)
+{
+    if (!hasClientInitialised) { //this means that this is a new client and objects for all current players are needed
+        PlayerConnectServerAckPacket* realPacket = (PlayerConnectServerAckPacket*)payload;
+        AddPlayerToWorld(Vector3(80, 0, 10), true, false, true, realPacket->playerNetIDs[realPacket->numPlayers - 1]);
+        for (int i = 0; i < realPacket->numPlayers - 1; i++) {
+            AddPlayerToWorld(Vector3(80, 0, 10), true, false, false, realPacket->playerNetIDs[i]);
+        }
+        hasClientInitialised = true;
+    }
+    else { //this means a new player has joined the game and a new player object is needed
+        PlayerConnectServerAckPacket* realPacket = (PlayerConnectServerAckPacket*)payload;
+        AddPlayerToWorld(Vector3(80, 0, 10), true, false, false, realPacket->playerNetIDs[realPacket->numPlayers - 1]);
+    }
 }
 void TutorialGame::ProcessClientInput(ClientPacket* p) {
 

@@ -12,47 +12,52 @@ namespace NCL::CSC8503 {
 		thisPhys = g->GetPhysicsObject();
 		homePoint = g->GetTransform().GetPosition();
 
-		BehaviourAction* pullTreasure = new BehaviourAction("Pull Treasure", [&](float dt, BehaviourState state)->BehaviourState {
-			Vector3 pullDirection = (gameObject->GetTransform().GetPosition() - treasure->GetTransform().GetPosition()).Normalised();
-			treasurePhys->SetAwake();
-			treasurePhys->AddForce(pullDirection * PULL_TREASURE_AMOUNT *dt);
-			return Success;
+		BehaviourAction* pullTreasure = new BehaviourAction("Pull Treasure", 
+            [&](float dt, BehaviourState state)->BehaviourState {
+			    Vector3 pullDirection = (gameObject->GetTransform().GetPosition() - treasure->GetTransform().GetPosition()).Normalised();
+			    treasurePhys->SetAwake();
+			    treasurePhys->AddForce(pullDirection * PULL_TREASURE_AMOUNT *dt);
+			    return Success;
 			}
 		);
 
-		BehaviourAction* isTreasureStolen = new BehaviourAction("Is Treasure Stolen", [&](float dt, BehaviourState state)->BehaviourState {
-			if ((treasure->GetTransform().GetPosition() - treasureStartPoint).LengthSquared() > DISTANCE_BEFORE_STOLEN) {
-				return Success;
-			}
-			else {
-				return Failure; 
-			}
-			}
-		);
-
-		BehaviourAction* pulseColours = new BehaviourAction("Pulse Colours", [&](float dt, BehaviourState state)->BehaviourState {
-			colourTimer += dt;
-			float colourMult = (sin(colourTimer) + 1) * 0.5f;
-			Vector4 colour = Debug::RED * colourMult + Debug::BLUE * (1 - colourMult);
-			gameObject->GetRenderObject()->SetColour(colour);
-			return Success;
+		BehaviourAction* isTreasureStolen = new BehaviourAction("Is Treasure Stolen", 
+            [&](float dt, BehaviourState state)->BehaviourState {
+			    if ((treasure->GetTransform().GetPosition() - treasureStartPoint).LengthSquared() > DISTANCE_BEFORE_STOLEN) {
+				    return Success;
+			    }
+			    else {
+				    return Failure; 
+			    }
 			}
 		);
 
-		BehaviourAction* stayAtHome = new BehaviourAction("Stay At Home", [&](float dt, BehaviourState state)->BehaviourState {
-			Vector3 direction = (homePoint - gameObject->GetTransform().GetPosition()).Normalised();
-			thisPhys->AddForce(direction * PULL_TREASURE_AMOUNT * dt);
-			return Success;
+		BehaviourAction* pulseColours = new BehaviourAction("Pulse Colours", 
+            [&](float dt, BehaviourState state)->BehaviourState {
+			    colourTimer += dt;
+			    float colourMult = (sin(colourTimer) + 1) * 0.5f;
+			    Vector4 colour = Debug::RED * colourMult + Debug::BLUE * (1 - colourMult);
+			    gameObject->GetRenderObject()->SetColour(colour);
+			    return Success;
 			}
 		);
 
-		BehaviourAction* chaseTreasure = new BehaviourAction("Chase Treasure", [&](float dt, BehaviourState state)->BehaviourState {
-			if( (homePoint-treasure->GetTransform().GetPosition()).LengthSquared() >CHASE_DISTANCE)
-			return Failure;
-			Vector3 direction = (treasure->GetTransform().GetPosition() - gameObject->GetTransform().GetPosition()).Normalised();
-			thisPhys->SetAwake();
-			thisPhys->AddForce(direction * PULL_TREASURE_AMOUNT * dt);
-			return Success;
+		BehaviourAction* stayAtHome = new BehaviourAction("Stay At Home", 
+            [&](float dt, BehaviourState state)->BehaviourState {
+			    Vector3 direction = (homePoint - gameObject->GetTransform().GetPosition()).Normalised();
+			    thisPhys->AddForce(direction * PULL_TREASURE_AMOUNT * dt);
+			    return Success;
+			}
+		);
+
+		BehaviourAction* chaseTreasure = new BehaviourAction("Chase Treasure", 
+            [&](float dt, BehaviourState state)->BehaviourState {
+			    if( (homePoint-treasure->GetTransform().GetPosition()).LengthSquared() >CHASE_DISTANCE)
+			    return Failure;
+			    Vector3 direction = (treasure->GetTransform().GetPosition() - gameObject->GetTransform().GetPosition()).Normalised();
+			    thisPhys->SetAwake();
+			    thisPhys->AddForce(direction * PULL_TREASURE_AMOUNT * dt);
+			    return Success;
 			}
 		);
 
